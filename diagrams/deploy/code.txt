@@ -1,0 +1,31 @@
+@startuml
+
+node "Мобильное устройство" {
+    component "Flutter Framework (фронтенд)" as Flutter
+    database "Keystore (Android)" as Keystore
+    component "flutter_secure_storage" as SecureStorage
+}
+
+node "VPS" {
+    node "Docker-контейнер с PostgreSQL" {
+        database "PostgreSQL (база данных)" as PostgreSQL
+    }
+    node "Docker-контейнер с Spring Boot" {
+        component "Spring Boot (бэкенд)" as Backend
+    }
+}
+
+node "ИИ-модель" {
+    component "GPT-модель (OpenAI API)" as OpenAI
+}
+
+Flutter -> SecureStorage : Сохранение логина/пароля
+SecureStorage --> Keystore : (Android)
+Backend -> PostgreSQL : Проверка логина/пароля
+Backend -> Flutter : Возврат токена доступа
+
+Flutter <--> Backend : Работа с данными
+Backend <--> PostgreSQL : Доступ к базе данных
+Backend <--> OpenAI : Взаимодействие с ИИ-моделью
+
+@enduml
