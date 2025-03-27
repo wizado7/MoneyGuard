@@ -1,5 +1,4 @@
 @startuml
-
 node "Мобильное устройство" {
     component "Flutter Framework (фронтенд)" as Flutter
     database "Keystore (Android)" as Keystore
@@ -16,16 +15,15 @@ node "VPS" {
 }
 
 node "ИИ-модель" {
-    component "GPT-модель (OpenAI API)" as OpenAI
+    component "GPT-модель" as OpenAI
 }
+
+VPS <--> "Мобильное устройство" : API-запросы (HTTPS)
+VPS <--> "ИИ-модель" : Взаимодействие с ИИ-моделью
 
 Flutter -> SecureStorage : Сохранение логина/пароля
 SecureStorage --> Keystore : (Android)
 Backend -> PostgreSQL : Проверка логина/пароля
-Backend -> Flutter : Возврат токена доступа
 
-Flutter <--> Backend : Работа с данными
 Backend <--> PostgreSQL : Доступ к базе данных
-Backend <--> OpenAI : Взаимодействие с ИИ-моделью
-
 @enduml

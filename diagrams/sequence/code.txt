@@ -3,8 +3,7 @@ actor Пользователь
 participant "Мобильное приложение" as App
 participant "Keystore/Keychain" as Storage
 participant "Бэкенд" as Backend
-participant "API банка" as BankAPI
-participant "База данных" as DB
+participant "API" as BankAPI
 
 Пользователь -> App: Открыть приложение
 App -> Storage: Получить логин и пароль
@@ -13,8 +12,8 @@ App -> Backend: Авторизация (логин, пароль)
 Backend -> App: Успешная авторизация (токен)
 
 App -> Backend: Запрос данных для главной страницы
-Backend -> DB: Запрос данных (баланс, транзакции, цели)
-DB -> Backend: Вернуть данные
+Backend -> BankAPI: Запрос данных (баланс, транзакции, цели)
+BankAPI -> Backend: Вернуть данные
 Backend -> App: Вернуть данные
 
 App -> BankAPI: Авторизация (логин, пароль)
@@ -22,36 +21,36 @@ BankAPI -> App: Успешная авторизация (токен)
 App -> BankAPI: Запрос списка транзакций
 BankAPI -> App: Вернуть список транзакций
 App -> Backend: Отправить транзакции для обработки
-Backend -> DB: Сохранить транзакции
-DB -> Backend: Подтверждение сохранения
+Backend -> BankAPI: Сохранить транзакции
+BankAPI -> Backend: Подтверждение сохранения
 Backend -> App: Успешное сохранение
 
 Пользователь -> App: Открыть страницу транзакций
 App -> Backend: Запрос списка транзакций
-Backend -> DB: Запрос списка транзакций
-DB -> Backend: Вернуть список транзакций
+Backend -> BankAPI: Запрос списка транзакций
+BankAPI -> Backend: Вернуть список транзакций
 Backend -> App: Вернуть список транзакций
 
 Пользователь -> App: Открыть страницу целей
 App -> Backend: Запрос списка целей
-Backend -> DB: Запрос списка целей
-DB -> Backend: Вернуть список целей
+Backend -> BankAPI: Запрос списка целей
+BankAPI -> Backend: Вернуть список целей
 Backend -> App: Вернуть список целей
 
 Пользователь -> App: Открыть страницу отчетов
 App -> Backend: Запрос данных для отчетов
-Backend -> DB: Запрос данных для отчетов
-DB -> Backend: Вернуть данные
+Backend -> BankAPI: Запрос данных для отчетов
+BankAPI -> Backend: Вернуть данные
 Backend -> App: Вернуть данные
 
 Пользователь -> App: Открыть страницу профиля
 App -> Backend: Запрос текущих данных профиля
-Backend -> DB: Запрос данных профиля
-DB -> Backend: Вернуть данные
+Backend -> BankAPI: Запрос данных профиля
+BankAPI -> Backend: Вернуть данные
 Backend -> App: Вернуть данные
 Пользователь -> App: Ввести новые данные
 App -> Backend: Отправить обновленные данные
-Backend -> DB: Сохранить обновленные данные
-DB -> Backend: Подтверждение сохранения
+Backend -> BankAPI: Сохранить обновленные данные
+BankAPI -> Backend: Подтверждение сохранения
 Backend -> App: Успешное обновление
 @enduml

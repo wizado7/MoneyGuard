@@ -1,0 +1,69 @@
+@startuml
+' Настройки отображения
+hide stereotype
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam roundcorner 20
+
+' Сущности
+entity "User" {
+  *ID : SERIAL <<PK>>
+  --
+  *Name : VARCHAR(50)
+  *Surname : VARCHAR(50)
+  *Email : VARCHAR(255) <<UNIQUE>>
+  Phone : VARCHAR(20)
+  AvatarLink : TEXT
+}
+
+entity "Transaction" {
+  *ID : SERIAL <<PK>>
+  --
+  *UserID : INT <<FK>>
+  *Amount : DECIMAL(10,2)
+  *Category : VARCHAR(50)
+  *Date : DATE
+  Description : TEXT
+}
+
+entity "Goal" {
+  *ID : SERIAL <<PK>>
+  --
+  *UserID : INT <<FK>>
+  *Name : VARCHAR(100)
+  *TargetAmount : DECIMAL(10,2)
+  CurrentProgress : DECIMAL(10,2) = 0
+  *EndDate : DATE
+}
+
+entity "Report" {
+  *ID : SERIAL <<PK>>
+  --
+  *UserID : INT <<FK>>
+  *Period : VARCHAR(50)
+  *Data : JSON
+}
+
+' Связи между таблицами
+User ||--o{ Transaction : "1:N"
+User ||--o{ Goal : "1:N"
+User ||--o{ Report : "1:N"
+
+' Индексы
+note top of Transaction
+  Индексы:
+  - idx_transaction_user (UserID)
+  - idx_transaction_date (Date)
+end note
+
+note top of Goal
+  Индексы:
+  - idx_goal_user (UserID)
+  - idx_goal_enddate (EndDate)
+end note
+
+note top of Report
+  Индексы:
+  - idx_report_user (UserID)
+end note
+@enduml

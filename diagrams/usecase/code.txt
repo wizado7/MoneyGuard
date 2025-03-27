@@ -1,62 +1,66 @@
 @startuml
 left to right direction
 
-actor "Незарегистрированный пользователь" as UnregisteredUser
-actor "Неавторизованный пользователь" as UnauthorizedUser
-actor "Авторизованный пользователь" as AuthorizedUser
+actor User
 
 rectangle "Финансовый помощник" {
-    UnregisteredUser -- (Регистрация)
-    UnregisteredUser -- (Ошибка регистрации)
+    (Регистрация) as register
+    (Авторизация) as login
+    (Восстановление пароля) as recovery
+    
+    User --> register
+    User --> login
+    User --> recovery
+    
+    register <.. (Ввод email и пароля) : includes
+    register <.. (Проверка уникальности email) : includes
+    register <.. (Создание аккаунта) : includes
+    
+    login <.. (Проверка данных) : includes
+    login <.. (Выдача токена) : includes
+    
+    recovery <.. (Отправка ссылки) : includes
+    
+    note right of register
+        Ошибки:
+        - Email занят
+        - Некорректные данные
+    end note
+    
+    note right of login
+        Ошибки:
+        - Неверные данные
+    end note
 
-    UnauthorizedUser -- (Авторизация)
-    UnauthorizedUser -- (Ошибка авторизации)
-    UnauthorizedUser -- (Восстановление пароля)
-
-    AuthorizedUser -- (Просмотр главной страницы)
-    AuthorizedUser -- (Просмотр транзакций)
-    AuthorizedUser -- (Управление целями)
-    AuthorizedUser -- (Просмотр отчетов)
-    AuthorizedUser -- (Взаимодействие с ИИ-ассистентом)
-    AuthorizedUser -- (Выход из приложения)
-
-    (Регистрация) <.. (Ввод email и пароля) : includes
-    (Регистрация) <.. (Проверка уникальности email) : includes
-    (Регистрация) <.. (Создание аккаунта) : includes
-
-    (Ошибка регистрации) <.. (Email уже занят) : includes
-    (Ошибка регистрации) <.. (Некорректные данные) : includes
-
-    (Авторизация) <.. (Ввод email и пароля) : includes
-    (Авторизация) <.. (Проверка данных) : includes
-    (Авторизация) <.. (Выдача токена доступа) : includes
-
-    (Ошибка авторизации) <.. (Неверный email или пароль) : includes
-
-    (Восстановление пароля) <.. (Запрос восстановления через email) : includes
-    (Восстановление пароля) <.. (Отправка ссылки для сброса пароля) : includes
-
-    (Просмотр главной страницы) <.. (Обзор финансового состояния) : includes
-    (Просмотр главной страницы) <.. (Просмотр баланса) : includes
-    (Просмотр главной страницы) <.. (Просмотр последних транзакций) : includes
-    (Просмотр главной страницы) <.. (Просмотр целей) : includes
-
-    (Просмотр транзакций) <.. (Просмотр данных о транзакции) : includes
-
-    (Управление целями) <.. (Добавление цели) : includes
-    (Управление целями) <.. (Редактирование цели) : includes
-    (Управление целями) <.. (Удаление цели) : includes
-
-    (Просмотр отчетов) <.. (Просмотр отчетов за день) : includes
-    (Просмотр отчетов) <.. (Просмотр отчетов за неделю) : includes
-    (Просмотр отчетов) <.. (Просмотр отчетов за месяц) : includes
-    (Просмотр отчетов) <.. (Просмотр отчетов за год) : includes
-    (Просмотр отчетов) <.. (Просмотр графиков и аналитики) : includes
-
-    (Взаимодействие с ИИ-ассистентом) <.. (Получение рекомендаций) : includes
-    (Взаимодействие с ИИ-ассистентом) <.. (Прогнозирование расходов) : includes
-
-    (Получение рекомендаций) <.. (Запрос советов по оптимизации расходов) : includes
-    (Прогнозирование расходов) <.. (Прогноз на основе предыдущих данных) : includes
+    rectangle "Основной функционал" {
+        (Главная страница) as dashboard
+        (Управление транзакциями) as transactions
+        (Управление целями) as goals
+        (Отчеты и аналитика) as reports
+        (ИИ-ассистент) as ai
+        
+        User --> dashboard
+        User --> transactions
+        User --> goals
+        User --> reports
+        User --> ai
+        User --> (Выход)
+        
+        dashboard <.. (Обзор баланса) : includes
+        dashboard <.. (Последние операции) : includes
+        
+        transactions <.. (Добавление) : includes
+        transactions <.. (Редактирование) : includes
+        transactions <.. (Импорт из банка) : includes
+        
+        goals <.. (Создание цели) : includes
+        goals <.. (Отслеживание) : includes
+        
+        reports <.. (Графики) : includes
+        reports <.. (Анализ трендов) : includes
+        
+        ai <.. (Рекомендации) : includes
+        ai <.. (Прогнозы) : includes
+    }
 }
 @enduml
