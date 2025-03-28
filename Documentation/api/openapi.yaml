@@ -1,0 +1,193 @@
+openapi: 3.0.1
+info:
+  title: MoneyGuard API
+  description: |
+    ### Система учета личных финансов
+    **Основные возможности:**
+    - Ручное добавление транзакций
+    - Импорт операций из Excel/CSV
+    - Управление финансовыми целями
+    - Получение аналитики и отчетов
+    - Персонализированные рекомендации через ИИ
+  version: 1.0.0
+
+servers:
+  - url: https://api.moneyguard.app/v1
+    description: Production API
+
+paths:
+  /transactions:
+    post:
+      tags: [Transactions]
+      summary: Создание новой транзакции
+      description: |
+        **Логика работы:**
+        1. Пользователь вводит данные о транзакции
+        2. Система валидирует данные
+        3. Транзакция сохраняется в БД
+        4. ИИ-модуль анализирует новую запись
+        5. Возвращается результат с рекомендациями
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+            example:
+              amount: 1500.50
+              category: "Продукты"
+              date: "2023-10-25"
+              description: "Покупка в Пятерочке"
+      responses:
+        '201':
+          description: |
+            **Успешное создание**:
+            - Транзакция сохранена
+            - Возвращаются ИИ-рекомендации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionAIResponse'
+
+  /transactions/import:
+    post:
+      tags: [Transactions]
+      summary: Импорт транзакций из Excel
+      description: |
+        **Процесс импорта**:
+        1. Загрузка файла (XLSX/CSV)
+        2. Парсинг и валидация данных
+        3. Пакетное сохранение транзакций
+        4. Массовый анализ ИИ-модулем
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Файл в формате Excel/CSV
+      responses:
+        '202':
+          description: Файл принят в обработку
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResponse'
+
+  /goals:
+    post:
+      tags: [Goals]
+      summary: Создание финансовой цели
+      description: |
+        **Взаимодействие компонентов**:
+        1. Пользователь устанавливает цель
+        2. Система рассчитывает ежемесячные платежи
+        3. ИИ-модуль оптимизирует план достижения
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+      responses:
+        '201':
+          description: Цель создана с планом достижения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalPlanResponse'
+
+  /ai/analysis:
+    get:
+      tags: [AI]
+      summary: Получить финансовую аналитику
+      description: |
+        **Анализ включает**:
+        - Категоризацию расходов
+        - Выявление аномалий
+        - Прогнозирование баланса
+      responses:
+        '200':
+          description: Аналитический отчет
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'
+
+components:
+  schemas:
+    TransactionRequest:
+      type: object
+      required: [amount, category, date]
+      properties:
+        amount:
+          type: number
+          minimum: 0.01
+          example: 1500.50
+        category:
+          type: string
+          enum: [Продукты, Транспорт, Жилье, Развлечения]
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+
+    TransactionAIResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: integer
+        recommendations:
+          type: array
+          items:
+            type: string
+          example: ["Превышен бюджет на продукты на 15%"]
+
+    ImportResponse:
+      type: object
+      properties:
+        processed:
+          type: integer
+        success:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+
+    GoalRequest:
+      type: object
+      required: [name, target_amount, target_date]
+      properties:
+        name:
+          type: string
+        target_amount:
+          type: number
+          minimum: 1000
+        target_date:
+          type: string
+          format: date
+
+    GoalPlanResponse:
+      type: object
+      properties:
+        monthly_payment:
+          type: number
+        optimization_advice:
+          type: string
+
+    AnalysisResponse:
+      type: object
+      properties:
+        period:
+          type: string
+        categories:
+          type: object
+          additionalProperties:
+            type: number
+        anomalies:
+          type: array
+          items:
+            type: string
