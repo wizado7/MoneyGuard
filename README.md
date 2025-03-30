@@ -56,6 +56,8 @@ MoneyGuard помогает взять под контроль личные фи
 📄 [Техническое задание](https://github.com/wizado7/MoneyGuard/blob/main/Documentation/tz/TZ.pdf)  
 📄 [Предпроектное исследование](https://github.com/wizado7/MoneyGuard/blob/main/Documentation/predevelopment_analysis/predevelopment_analysis.pdf)  
 📚 [API документация](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/wizado7/MoneyGuard/main/Documentation/api/openapi.yaml)  
+🎨 [Figma-макет](https://www.figma.com/design/Y2fINF6TJY74dbqRtbp0ZC/Untitled?node-id=0-1&t=Yah9GDolY9SZGMGR-1)
+
 
 
 ## ✅ Наш [Чек-лист](https://docs.google.com/spreadsheets/d/1cfGVbr18j8LwufJ-sXo4wqPIhHYh7-kiY-nGHST9bUM/edit?gid=0#gid=0) 
