@@ -59,6 +59,7 @@ MoneyGuard помогает взять под контроль личные фи
 
 
 ## ✅ Наш [Чек-лист](https://docs.google.com/spreadsheets/d/1cfGVbr18j8LwufJ-sXo4wqPIhHYh7-kiY-nGHST9bUM/edit?gid=0#gid=0) 
+Нас оценивали:
 - **4 группа 1 спец команда [Git](https://github.com/noviyblock/TechTrek-Web-repository) [Чек-лист](https://docs.google.com/spreadsheets/d/13YKOvzV7jyS1OseR_betV5oW4j_kMyNTD6rEV9CL7d4/edit?usp=sharing)**
 - **9 группа 3 команда [Git](https://github.com/slash0t/travel-planner) [Чек-лист](https://docs.google.com/spreadsheets/d/195jVLHMlAAU-fgBwmSOLQPdO-yhVrDwKYtFTor5-Xs4/edit?gid=106249898#gid=106249898)**
 - **8 группа 5 команда [Git](https://gitlab.com/vsu.cs/TPmain) [Чек-лист](https://docs.google.com/spreadsheets/d/14pd8UNl85quk7TuTDoyfVe29yNMbXnO-Itg9Sz_2X3g/edit?gid=995648071#gid=995648071)**
