@@ -3,6 +3,9 @@
 **Умный финансовый ассистент с ИИ для контроля расходов и накоплений**  
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) 
 [![OpenAPI Docs](https://img.shields.io/badge/API_Docs-ReDoc-blue)](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/wizado7/MoneyGuard/main/Documentation/api/openapi.yaml)
+[![Technical Scpec](https://img.shields.io/badge/Technical_Specifications-PDF-blue)](https://github.com/wizado7/MoneyGuard/blob/main/Documentation/tz/TZ.pdf)
+[![Presentation Video](https://img.shields.io/badge/YouTube-Video_Presentation-red?logo=youtube)](https://youtu.be/J_SbZfkjXYc)
+[![Task Tracker](https://img.shields.io/badge/Weeek-Tasks-blue?logo=trello)](https://app.weeek.net/ws/765643/shared/board/pCvCZlCfqLW0pM9d78EEVriCExHBJETf)
 
 ## 📌 О проекте
 
