@@ -4,22 +4,168 @@ info:
   description: |
     ### Система учета личных финансов
     **Основные возможности:**
+    - Аутентификация и управление профилем
     - Ручное добавление транзакций
     - Импорт операций из Excel/CSV
     - Управление финансовыми целями
     - Получение аналитики и отчетов
     - Персонализированные рекомендации через ИИ
+    - Управление категориями и лимитами
   version: 1.0.0
 
 servers:
   - url: https://api.moneyguard.app/v1
     description: Production API
 
+securitySchemes:
+  bearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+
 paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Регистрация нового пользователя
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Аутентификация пользователя
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Выход из системы на всех устройствах
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Успешный выход
+
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Получить данные профиля
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Данные профиля
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+
+    put:
+      tags: [Profile]
+      summary: Обновить данные профиля
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+      responses:
+        '200':
+          description: Профиль успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+
+  /subscription:
+    get:
+      tags: [Subscription]
+      summary: Получить информацию о подписке
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Информация о подписке
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+    post:
+      tags: [Subscription]
+      summary: Оформить/обновить подписку
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionRequest'
+      responses:
+        '200':
+          description: Подписка оформлена/обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+    delete:
+      tags: [Subscription]
+      summary: Отменить подписку
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Подписка отменена
+
   /transactions:
+    get:
+      tags: [Transactions]
+      summary: Получить список транзакций
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/dateFrom'
+        - $ref: '#/components/parameters/dateTo'
+        - $ref: '#/components/parameters/category'
+      responses:
+        '200':
+          description: Список транзакций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionResponse'
+
     post:
       tags: [Transactions]
       summary: Создание новой транзакции
+      security:
+        - bearerAuth: []
       description: |
         **Логика работы:**
         1. Пользователь вводит данные о транзакции
@@ -32,26 +178,52 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TransactionRequest'
-            example:
-              amount: 1500.50
-              category: "Продукты"
-              date: "2023-10-25"
-              description: "Покупка в Пятерочке"
       responses:
         '201':
-          description: |
-            **Успешное создание**:
-            - Транзакция сохранена
-            - Возвращаются ИИ-рекомендации
+          description: Транзакция создана с рекомендациями
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransactionAIResponse'
 
+  /transactions/{id}:
+    put:
+      tags: [Transactions]
+      summary: Обновить транзакцию
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/transactionId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        '200':
+          description: Транзакция обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+
+    delete:
+      tags: [Transactions]
+      summary: Удалить транзакцию
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/transactionId'
+      responses:
+        '204':
+          description: Транзакция удалена
+
   /transactions/import:
     post:
       tags: [Transactions]
-      summary: Импорт транзакций из Excel
+      summary: Импорт транзакций из Excel/CSV
+      security:
+        - bearerAuth: []
       description: |
         **Процесс импорта**:
         1. Загрузка файла (XLSX/CSV)
@@ -76,10 +248,159 @@ paths:
               schema:
                 $ref: '#/components/schemas/ImportResponse'
 
+  /categories:
+    get:
+      tags: [Categories]
+      summary: Получить список категорий
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список категорий
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+
+    post:
+      tags: [Categories]
+      summary: Создать новую категорию
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '201':
+          description: Категория создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+
+  /categories/{id}:
+    put:
+      tags: [Categories]
+      summary: Обновить категорию
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/categoryId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Категория обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+
+    delete:
+      tags: [Categories]
+      summary: Удалить категорию
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/categoryId'
+      responses:
+        '204':
+          description: Категория удалена
+
+  /limits:
+    get:
+      tags: [Limits]
+      summary: Получить список лимитов
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список лимитов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LimitResponse'
+
+    post:
+      tags: [Limits]
+      summary: Установить лимит для категории
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitRequest'
+      responses:
+        '201':
+          description: Лимит установлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitResponse'
+
+  /limits/{id}:
+    put:
+      tags: [Limits]
+      summary: Обновить лимит
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/limitId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitRequest'
+      responses:
+        '200':
+          description: Лимит обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitResponse'
+
+    delete:
+      tags: [Limits]
+      summary: Удалить лимит
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/limitId'
+      responses:
+        '204':
+          description: Лимит удален
+
   /goals:
+    get:
+      tags: [Goals]
+      summary: Получить список финансовых целей
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список целей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GoalResponse'
+
     post:
       tags: [Goals]
       summary: Создание финансовой цели
+      security:
+        - bearerAuth: []
       description: |
         **Взаимодействие компонентов**:
         1. Пользователь устанавливает цель
@@ -98,10 +419,77 @@ paths:
               schema:
                 $ref: '#/components/schemas/GoalPlanResponse'
 
+  /goals/{id}:
+    get:
+      tags: [Goals]
+      summary: Получить детали цели
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/goalId'
+      responses:
+        '200':
+          description: Детали цели
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalDetailResponse'
+
+    put:
+      tags: [Goals]
+      summary: Обновить финансовую цель
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/goalId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+      responses:
+        '200':
+          description: Цель обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalPlanResponse'
+
+    delete:
+      tags: [Goals]
+      summary: Удалить финансовую цель
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/goalId'
+      responses:
+        '204':
+          description: Цель удалена
+
+  /reports:
+    get:
+      tags: [Reports]
+      summary: Получить финансовый отчет
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/dateFrom'
+        - $ref: '#/components/parameters/dateTo'
+        - $ref: '#/components/parameters/reportType'
+      responses:
+        '200':
+          description: Финансовый отчет
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+
   /ai/analysis:
     get:
       tags: [AI]
       summary: Получить финансовую аналитику
+      security:
+        - bearerAuth: []
       description: |
         **Анализ включает**:
         - Категоризацию расходов
@@ -115,8 +503,183 @@ paths:
               schema:
                 $ref: '#/components/schemas/AnalysisResponse'
 
+  /ai/chat:
+    post:
+      tags: [AI]
+      summary: Чат с ИИ-ассистентом
+      security:
+        - bearerAuth: []
+      description: |
+        **Функционал**:
+        - Получение персонализированных рекомендаций
+        - Анализ прикрепленных чеков (изображений)
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: Текстовый запрос пользователя
+                image:
+                  type: string
+                  format: binary
+                  description: Изображение чека (опционально)
+      responses:
+        '200':
+          description: Ответ ИИ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIChatResponse'
+
 components:
+  parameters:
+    transactionId:
+      name: id
+      in: path
+      description: ID транзакции
+      required: true
+      schema:
+        type: integer
+
+    categoryId:
+      name: id
+      in: path
+      description: ID категории
+      required: true
+      schema:
+        type: integer
+
+    limitId:
+      name: id
+      in: path
+      description: ID лимита
+      required: true
+      schema:
+        type: integer
+
+    goalId:
+      name: id
+      in: path
+      description: ID цели
+      required: true
+      schema:
+        type: integer
+
+    dateFrom:
+      name: date_from
+      in: query
+      description: Начальная дата периода
+      schema:
+        type: string
+        format: date
+
+    dateTo:
+      name: date_to
+      in: query
+      description: Конечная дата периода
+      schema:
+        type: string
+        format: date
+
+    category:
+      name: category
+      in: query
+      description: Фильтр по категории
+      schema:
+        type: string
+
+    reportType:
+      name: type
+      in: query
+      description: Тип отчета
+      schema:
+        type: string
+        enum: [monthly, quarterly, yearly, custom]
+
   schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/ProfileResponse'
+
+    ProfileResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ProfileUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [free, premium, family]
+        expires_at:
+          type: string
+          format: date
+        features:
+          type: array
+          items:
+            type: string
+
+    SubscriptionRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [free, premium, family]
+        payment_token:
+          type: string
+
     TransactionRequest:
       type: object
       required: [amount, category, date]
@@ -127,18 +690,35 @@ components:
           example: 1500.50
         category:
           type: string
-          enum: [Продукты, Транспорт, Жилье, Развлечения]
         date:
           type: string
           format: date
         description:
           type: string
 
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: number
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
     TransactionAIResponse:
       type: object
       properties:
-        transaction_id:
-          type: integer
+        transaction:
+          $ref: '#/components/schemas/TransactionResponse'
         recommendations:
           type: array
           items:
@@ -157,6 +737,58 @@ components:
           items:
             type: string
 
+    CategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        parent_id:
+          type: integer
+          nullable: true
+        icon:
+          type: string
+
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        parent_id:
+          type: integer
+          nullable: true
+        icon:
+          type: string
+
+    LimitRequest:
+      type: object
+      required: [category_id, amount, period]
+      properties:
+        category_id:
+          type: integer
+        amount:
+          type: number
+          minimum: 0.01
+        period:
+          type: string
+          enum: [daily, weekly, monthly, yearly]
+
+    LimitResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        category:
+          $ref: '#/components/schemas/CategoryResponse'
+        amount:
+          type: number
+        period:
+          type: string
+        current_spending:
+          type: number
+
     GoalRequest:
       type: object
       required: [name, target_amount, target_date]
@@ -169,14 +801,76 @@ components:
         target_date:
           type: string
           format: date
+        priority:
+          type: string
+          enum: [low, medium, high]
+
+    GoalResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        target_amount:
+          type: number
+        current_amount:
+          type: number
+        target_date:
+          type: string
+          format: date
+        priority:
+          type: string
 
     GoalPlanResponse:
       type: object
       properties:
+        goal:
+          $ref: '#/components/schemas/GoalResponse'
         monthly_payment:
           type: number
         optimization_advice:
           type: string
+
+    GoalDetailResponse:
+      type: object
+      properties:
+        goal:
+          $ref: '#/components/schemas/GoalResponse'
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionResponse'
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    ReportResponse:
+      type: object
+      properties:
+        period:
+          type: string
+        income:
+          type: number
+        expenses:
+          type: number
+        balance:
+          type: number
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryReport'
+
+    CategoryReport:
+      type: object
+      properties:
+        category:
+          type: string
+        amount:
+          type: number
+        percentage:
+          type: number
 
     AnalysisResponse:
       type: object
@@ -188,6 +882,28 @@ components:
           additionalProperties:
             type: number
         anomalies:
+          type: array
+          items:
+            type: string
+        forecast:
+          type: object
+          properties:
+            balance:
+              type: number
+            risk_level:
+              type: string
+              enum: [low, medium, high]
+
+    AIChatResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        advice:
+          type: array
+          items:
+            type: string
+        actions:
           type: array
           items:
             type: string
