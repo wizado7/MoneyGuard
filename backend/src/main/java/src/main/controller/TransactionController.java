@@ -34,22 +34,30 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @GetMapping
-    public ResponseEntity<List<TransactionResponse>> getTransactions(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date_from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date_to,
-            @RequestParam(required = false) String category
-    ) {
+    public ResponseEntity<?> getTransactions(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) String category) {
         log.debug("REST запрос на получение списка транзакций");
         try {
-            if (date_from != null && date_to != null && date_from.isAfter(date_to)) {
-                throw new InvalidDataException("Начальная дата не может быть позже конечной даты")
-                        .addError("date_from", "Начальная дата не может быть позже конечной даты");
-            }
-            return ResponseEntity.ok(transactionService.getTransactions(date_from, date_to, category));
-        } catch (InvalidDataException e) {
-            throw e;
+            List<TransactionResponse> transactions = transactionService.getTransactions(dateFrom, dateTo, category);
+            return ResponseEntity.ok(transactions);
         } catch (Exception e) {
             log.error("Ошибка при получении списка транзакций: {}", e.getMessage(), e);
+            
+            // Если ошибка связана с кэшированием Redis, попробуем получить данные напрямую из БД
+            if (e instanceof org.springframework.data.redis.RedisConnectionFailureException ||
+                e instanceof org.springframework.data.redis.serializer.SerializationException) {
+                try {
+                    // Вызываем метод без кэширования
+                    List<TransactionResponse> transactions = transactionService.getTransactionsWithoutCache(dateFrom, dateTo, category);
+                    return ResponseEntity.ok(transactions);
+                } catch (Exception fallbackEx) {
+                    log.error("Ошибка при получении списка транзакций без кэша: {}", fallbackEx.getMessage(), fallbackEx);
+                    throw new BusinessException("Ошибка при получении списка транзакций", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            }
+            
             throw new BusinessException("Ошибка при получении списка транзакций", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

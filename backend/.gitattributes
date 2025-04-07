@@ -1,2 +1,53 @@
-/mvnw text eol=lf
+# Установка нормализации окончаний строк для всех текстовых файлов
+* text=auto
+
+# Явное указание файлов, которые должны иметь LF окончания строк
+*.java text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.properties text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.sql text eol=lf
+*.sh text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.html text eol=lf
+*.txt text eol=lf
+*.csv text eol=lf
+*.ftl text eol=lf
+*.vm text eol=lf
+*.gradle text eol=lf
+*.conf text eol=lf
+*.env text eol=lf
+*.env.* text eol=lf
+.env.* text eol=lf
+Dockerfile text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# Скрипты Maven должны иметь LF окончания строк
+mvnw text eol=lf
 *.cmd text eol=crlf
+
+# Бинарные файлы не должны изменяться
+*.jar binary
+*.war binary
+*.zip binary
+*.tar binary
+*.tar.gz binary
+*.gz binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.doc binary
+*.docx binary
+*.xls binary
+*.xlsx binary
+*.ppt binary
+*.pptx binary

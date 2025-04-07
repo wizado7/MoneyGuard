@@ -2,6 +2,8 @@ package src.main.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Cacheable(value = "userProfile", key = "#root.target.getCurrentUserEmail()")
     public ProfileResponse getProfile() {
         User currentUser = getCurrentUser();
         
@@ -32,6 +35,7 @@ public class ProfileService {
                 .build();
     }
 
+    @CacheEvict(value = "userProfile", key = "#root.target.getCurrentUserEmail()")
     public ProfileResponse updateProfile(ProfileUpdateRequest request) {
         User currentUser = getCurrentUser();
         
@@ -60,6 +64,11 @@ public class ProfileService {
                 .subscriptionType(currentUser.getSubscriptionType() != null ? currentUser.getSubscriptionType().name() : null)
                 .subscriptionExpiry(currentUser.getSubscriptionExpiry())
                 .build();
+    }
+
+    // Вспомогательный метод для получения email текущего пользователя для ключа кэша
+    public String getCurrentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
     private User getCurrentUser() {

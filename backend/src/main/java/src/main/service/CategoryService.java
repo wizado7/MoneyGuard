@@ -1,6 +1,8 @@
 package src.main.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import src.main.dto.category.CategoryRequest;
@@ -35,6 +37,7 @@ public class CategoryService {
     private final LimitRepository limitRepository;
     private static final Logger log = LoggerFactory.getLogger(CategoryService.class);
 
+    @Cacheable(value = "categories", key = "#root.target.getCurrentUserEmail()")
     public List<CategoryResponse> getCategories() {
         User currentUser = getCurrentUser();
         
@@ -45,6 +48,7 @@ public class CategoryService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "categories", key = "#root.target.getCurrentUserEmail()")
     public CategoryResponse createCategory(CategoryRequest request) {
         User currentUser = getCurrentUser();
         
@@ -82,6 +86,7 @@ public class CategoryService {
         }
     }
 
+    @CacheEvict(value = "categories", key = "#root.target.getCurrentUserEmail()")
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
         User currentUser = getCurrentUser();
         
@@ -113,6 +118,7 @@ public class CategoryService {
         return mapToCategoryResponse(updatedCategory);
     }
 
+    @CacheEvict(value = "categories", key = "#root.target.getCurrentUserEmail()")
     public void deleteCategory(Long id) {
         log.debug("Удаление категории с ID: {}", id);
         User currentUser = getCurrentUser();
@@ -167,5 +173,9 @@ public class CategoryService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    }
+
+    public String getCurrentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 } 

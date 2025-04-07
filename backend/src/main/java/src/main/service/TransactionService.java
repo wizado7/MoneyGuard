@@ -2,6 +2,8 @@ package src.main.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,7 +47,10 @@ public class TransactionService {
     private final GoalRepository goalRepository;
     private final LimitRepository limitRepository;
 
+    @Cacheable(value = "transactions", key = "{#root.target.getCurrentUserEmail(), #dateFrom, #dateTo, #categoryName}")
     public List<TransactionResponse> getTransactions(LocalDate dateFrom, LocalDate dateTo, String categoryName) {
+        log.info("Cache MISS: Loading transactions from database for period: {} - {} and category: {}", 
+                 dateFrom, dateTo, categoryName);
         User currentUser = getCurrentUser();
         
         List<Transaction> transactions;
@@ -71,34 +76,28 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "transactions", allEntries = true)
     public TransactionAIResponse createTransaction(TransactionRequest request) {
         log.debug("Создание новой транзакции");
         User currentUser = getCurrentUser();
         
-        // Проверка категории
+        // Находим категорию по имени
         Category category = categoryRepository.findByNameAndUser(request.getCategory(), currentUser)
-                .orElseThrow(() -> {
-                    log.warn("Категория {} не найдена для пользователя {}", request.getCategory(), currentUser.getEmail());
-                    return new EntityNotFoundException("Категория", request.getCategory(), 
-                        "Категория '" + request.getCategory() + "' не найдена. Пожалуйста, сначала создайте категорию.");
-                });
+                .orElseThrow(() -> new EntityNotFoundException("Категория", request.getCategory()));
         
-        // Проверка цели, если указана
+        // Находим цель, если указана
         Goal goal = null;
         if (request.getGoal_id() != null) {
             goal = goalRepository.findById(request.getGoal_id())
-                    .orElseThrow(() -> {
-                        log.warn("Цель с ID {} не найдена", request.getGoal_id());
-                        return new EntityNotFoundException("Цель", request.getGoal_id());
-                    });
+                    .orElseThrow(() -> new EntityNotFoundException("Цель", request.getGoal_id()));
             
-            // Проверяем, что цель принадлежит текущему пользователю
+            // Проверяем, принадлежит ли цель текущему пользователю
             if (!goal.getUser().getId().equals(currentUser.getId())) {
-                log.warn("Попытка связать транзакцию с чужой целью: {} пользователем: {}", request.getGoal_id(), currentUser.getEmail());
                 throw OperationNotAllowedException.notOwner("цель");
             }
         }
         
+        // Создаем транзакцию
         Transaction transaction = Transaction.builder()
                 .user(currentUser)
                 .category(category)
@@ -109,15 +108,16 @@ public class TransactionService {
                 .createdAt(LocalDateTime.now())
                 .build();
         
-        transactionRepository.save(transaction);
-        log.info("Транзакция успешно создана для пользователя: {}", currentUser.getEmail());
-        
-        // Обновляем сумму цели, если транзакция связана с целью и сумма положительная
+        // Если это транзакция для цели и сумма положительная, обновляем текущую сумму цели
         if (goal != null && request.getAmount().compareTo(BigDecimal.ZERO) > 0) {
             goal.setCurrentAmount(goal.getCurrentAmount().add(request.getAmount()));
             goalRepository.save(goal);
-            log.info("Обновлена сумма цели {}: {}", goal.getName(), goal.getCurrentAmount());
         }
+        
+        transaction = transactionRepository.save(transaction);
+        
+        // Проверяем, не превышен ли лимит по категории
+        checkCategoryLimit(currentUser, category, request.getAmount());
         
         // Генерируем рекомендации на основе транзакции
         List<String> recommendations = generateRecommendations(transaction);
@@ -128,6 +128,7 @@ public class TransactionService {
                 .build();
     }
 
+    @CacheEvict(value = "transactions", allEntries = true)
     public TransactionResponse updateTransaction(Long id, TransactionRequest request) {
         log.debug("Обновление транзакции с ID: {}", id);
         User currentUser = getCurrentUser();
@@ -194,6 +195,7 @@ public class TransactionService {
         return mapToTransactionResponse(transaction);
     }
 
+    @CacheEvict(value = "transactions", allEntries = true)
     public void deleteTransaction(Long id) {
         log.debug("Удаление транзакции с ID: {}", id);
         User currentUser = getCurrentUser();
@@ -274,5 +276,74 @@ public class TransactionService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    }
+
+    public String getCurrentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
+    private void checkCategoryLimit(User user, Category category, BigDecimal amount) {
+        // Проверяем лимиты только для расходов (отрицательные суммы)
+        if (amount.compareTo(BigDecimal.ZERO) >= 0) {
+            return;
+        }
+        
+        // Получаем все лимиты для данной категории
+        List<Limit> limits = limitRepository.findByUserAndCategoryId(user, category.getId());
+        
+        for (Limit limit : limits) {
+            // Определяем период лимита
+            LocalDate startDate = DateUtil.getStartOfPeriod(limit.getPeriod());
+            LocalDate endDate = LocalDate.now();
+            
+            // Получаем сумму расходов за период
+            BigDecimal spent = transactionRepository.sumByUserAndCategoryAndPeriod(
+                    user, category, startDate, endDate);
+            
+            // Если сумма не найдена, считаем, что расходов не было
+            if (spent == null) {
+                spent = BigDecimal.ZERO;
+            }
+            
+            // Добавляем текущую транзакцию к сумме расходов
+            // Используем абсолютное значение суммы, так как расходы отрицательные
+            BigDecimal totalSpent = spent.add(amount.abs());
+            
+            // Если превышен лимит, логируем предупреждение
+            if (totalSpent.compareTo(limit.getAmount()) > 0) {
+                log.warn("Превышен лимит по категории {} для пользователя {}: {} из {}",
+                        category.getName(), user.getEmail(), totalSpent, limit.getAmount());
+                // Здесь можно добавить отправку уведомления пользователю
+            }
+        }
+    }
+
+    // Метод без кэширования для использования в случае ошибок с Redis
+    public List<TransactionResponse> getTransactionsWithoutCache(LocalDate dateFrom, LocalDate dateTo, String categoryName) {
+        log.info("Загрузка транзакций из базы данных без кэша для периода: {} - {} и категории: {}", 
+                 dateFrom, dateTo, categoryName);
+        User currentUser = getCurrentUser();
+        
+        List<Transaction> transactions;
+        
+        if (dateFrom != null && dateTo != null) {
+            transactions = transactionRepository.findByUserAndDateBetweenOrderByDateDesc(currentUser, dateFrom, dateTo);
+        } else if (categoryName != null && !categoryName.isEmpty()) {
+            // Находим категорию по имени
+            Category category = categoryRepository.findByNameAndUser(categoryName, currentUser)
+                    .orElse(null);
+            
+            if (category != null) {
+                transactions = transactionRepository.findByUserAndCategoryIdOrderByDateDesc(currentUser, category.getId());
+            } else {
+                transactions = new ArrayList<>();
+            }
+        } else {
+            transactions = transactionRepository.findByUserOrderByDateDesc(currentUser);
+        }
+        
+        return transactions.stream()
+                .map(this::mapToTransactionResponse)
+                .collect(Collectors.toList());
     }
 } 

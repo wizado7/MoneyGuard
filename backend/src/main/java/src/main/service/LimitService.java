@@ -2,6 +2,8 @@ package src.main.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import src.main.dto.category.CategoryResponse;
@@ -36,6 +38,7 @@ public class LimitService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
 
+    @Cacheable(value = "limits", key = "#root.target.getCurrentUserEmail()")
     public List<LimitResponse> getLimits() {
         User currentUser = getCurrentUser();
         
@@ -46,6 +49,7 @@ public class LimitService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "limits", key = "#root.target.getCurrentUserEmail()")
     public LimitResponse createLimit(LimitRequest request) {
         log.debug("Создание нового лимита");
         User currentUser = getCurrentUser();
@@ -103,6 +107,7 @@ public class LimitService {
                 .build();
     }
 
+    @CacheEvict(value = "limits", key = "#root.target.getCurrentUserEmail()")
     public LimitResponse updateLimit(Long id, LimitRequest request) {
         log.debug("Обновление лимита с ID: {}", id);
         User currentUser = getCurrentUser();
@@ -171,6 +176,7 @@ public class LimitService {
                 .build();
     }
 
+    @CacheEvict(value = "limits", key = "#root.target.getCurrentUserEmail()")
     public void deleteLimit(Long id) {
         log.debug("Удаление лимита с ID: {}", id);
         User currentUser = getCurrentUser();
@@ -244,5 +250,9 @@ public class LimitService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    }
+
+    public String getCurrentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 } 

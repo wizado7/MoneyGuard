@@ -1,6 +1,7 @@
 package src.main.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import src.main.dto.report.CategoryReport;
@@ -27,6 +28,7 @@ public class ReportService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
 
+    @Cacheable(value = "reports", key = "{#root.target.getCurrentUserEmail(), #dateFrom, #dateTo, #type}")
     public ReportResponse getReport(LocalDate dateFrom, LocalDate dateTo, String type) {
         User currentUser = getCurrentUser();
         
@@ -126,5 +128,9 @@ public class ReportService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    }
+
+    public String getCurrentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 } 
