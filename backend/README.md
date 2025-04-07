@@ -94,7 +94,7 @@ MoneyGuard - это приложение для управления личны�
 http://localhost:8080/v1/swagger-ui/index.html#/
 ```
 
-Также вы можете ознакомиться с документацией в файле [API.md](API.md) или [123]().
+Также вы можете ознакомиться с документацией в файле [API.md](API.md) или [OpenAPI Documentation](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/wizado7/MoneyGuard/backend/backend/src/main/resources/openapi/openapi.yaml).
 
 ## Тестирование
 
