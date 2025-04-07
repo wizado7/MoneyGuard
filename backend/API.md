@@ -29,7 +29,7 @@
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "email": "user@example.com",
+  "email": "ex@ex.com",
   "name": "Имя Пользователя",
   "ai_access_enabled": false
 }
