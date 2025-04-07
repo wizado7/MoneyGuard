@@ -38,6 +38,7 @@ MoneyGuard - это приложение для управления личны�
    git clone https://github.com/wizado7/MoneyGuard.git
    cd moneyguard
    git checkout -b backend origin/backend
+   git rm -rf .
    git pull origin backend
    ```
 
@@ -63,6 +64,7 @@ MoneyGuard - это приложение для управления личны�
    git clone https://github.com/wizado7/MoneyGuard.git
    cd moneyguard
    git checkout -b backend origin/backend
+   git rm -rf .
    git pull origin backend
    ```
 
