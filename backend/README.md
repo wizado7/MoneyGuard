@@ -38,6 +38,7 @@ MoneyGuard - это приложение для управления личны�
    git clone https://github.com/wizado7/MoneyGuard.git
    cd moneyguard
    git checkout -b backend origin/backend
+   git pull origin backend
    ```
 
 2. Запустите приложение с помощью Docker Compose (не забудьте .env):
@@ -62,6 +63,7 @@ MoneyGuard - это приложение для управления личны�
    git clone https://github.com/wizado7/MoneyGuard.git
    cd moneyguard
    git checkout -b backend origin/backend
+   git pull origin backend
    ```
 
 2. Запустите PostgreSQL с помощью Docker:
