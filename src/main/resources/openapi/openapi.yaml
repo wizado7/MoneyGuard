@@ -1,0 +1,2194 @@
+openapi: 3.0.3
+info:
+  title: MoneyGuard API
+  description: |
+    # MoneyGuard API
+    
+    API для приложения управления личными финансами MoneyGuard, которое позволяет пользователям отслеживать доходы и расходы, 
+    устанавливать бюджеты, создавать финансовые цели и получать аналитику по своим финансам.
+    
+    ## Аутентификация
+    
+    Все защищенные эндпоинты требуют JWT токен, который можно получить через `/auth/login` или `/auth/register`.
+    Токен необходимо передавать в заголовке `Authorization` в формате `Bearer {token}`.
+    
+    ## Доступ к ИИ
+    
+    Приложение предоставляет базовый функционал для всех пользователей. Доступ к AI-рекомендациям можно получить,
+    активировав соответствующую опцию через API подписки.
+  version: 1.0.0
+  contact:
+    email: 123
+
+servers:
+  - url: http://localhost:8080
+    description: Локальный сервер разработки
+
+tags:
+  - name: Authentication
+    description: Аутентификация и авторизация пользователей
+  - name: Profile
+    description: Управление профилем пользователя
+  - name: Subscription
+    description: Управление подпиской пользователя
+  - name: Categories
+    description: Управление категориями доходов и расходов
+  - name: Transactions
+    description: Управление финансовыми транзакциями
+  - name: Limits
+    description: Управление лимитами расходов по категориям
+  - name: Goals
+    description: Управление финансовыми целями
+  - name: Reports
+    description: Отчеты и аналитика по финансам
+  - name: AI
+    description: AI-рекомендации по управлению финансами
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT токен авторизации, полученный при регистрации или входе в систему
+
+  parameters:
+    categoryId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Уникальный идентификатор категории
+      example: 1
+    
+    transactionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Уникальный идентификатор транзакции
+      example: 1
+    
+    limitId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Уникальный идентификатор лимита
+      example: 1
+    
+    goalId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Уникальный идентификатор цели
+      example: 1
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [ email, password, name ]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя (должен быть уникальным)
+          example: user@example.com
+        password:
+          type: string
+          minLength: 8
+          description: Пароль пользователя (минимум 8 символов,заглавная, прописная, цифра)
+          example: password123
+        name:
+          type: string
+          description: Имя пользователя
+          example: Иван Иванов
+
+    LoginRequest:
+      type: object
+      required: [ email, password ]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+          example: user@example.com
+        password:
+          type: string
+          description: Пароль пользователя
+          example: password123
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT токен для авторизации
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        email:
+          type: string
+          description: Email пользователя
+          example: user@example.com
+        name:
+          type: string
+          description: Имя пользователя
+          example: Иван Иванов
+        ai_access_enabled:
+          type: boolean
+          description: Флаг доступа к AI-рекомендациям
+          example: false
+
+    ProfileResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор пользователя
+          example: 1
+        email:
+          type: string
+          description: Email пользователя
+          example: user@example.com
+        name:
+          type: string
+          description: Имя пользователя
+          example: Иван Иванов
+        ai_access_enabled:
+          type: boolean
+          description: Флаг доступа к AI-рекомендациям
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          description: Дата регистрации пользователя
+          example: 2023-04-01T12:00:00Z
+
+    ProfileUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Новый email пользователя (должен быть уникальным)
+          example: new.email@example.com
+        name:
+          type: string
+          description: Новое имя пользователя
+          example: Петр Петров
+        password:
+          type: string
+          minLength: 8
+          description: Новый пароль пользователя (минимум 8 символов, заглавная, прописания, цифра)
+          example: Newpassword123
+
+    SubscriptionRequest:
+      type: object
+      required: [ type ]
+      properties:
+        type:
+          type: string
+          enum: [ FREE, PREMIUM, PRO ]
+          description: Тип подписки
+          example: PREMIUM
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        ai_access_enabled:
+          type: boolean
+          description: Флаг доступа к AI-рекомендациям
+          example: true
+        features:
+          type: array
+          items:
+            type: string
+          description: Список доступных функций
+          example:
+            - Базовый учет доходов и расходов
+            - Неограниченное количество категорий
+            - Неограниченное количество транзакций
+            - Доступ к AI-рекомендациям
+
+    CategoryRequest:
+      type: object
+      required: [ name ]
+      properties:
+        name:
+          type: string
+          description: Название категории
+          example: Продукты
+        parent_id:
+          type: integer
+          nullable: true
+          description: ID родительской категории (null для корневых категорий)
+          example: null
+        icon:
+          type: string
+          description: Иконка категории
+          example: shopping_cart
+
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор категории
+          example: 1
+        name:
+          type: string
+          description: Название категории
+          example: Продукты
+        parent_id:
+          type: integer
+          nullable: true
+          description: ID родительской категории (null для корневых категорий)
+          example: null
+        icon:
+          type: string
+          description: Иконка категории
+          example: shopping_cart
+
+    TransactionRequest:
+      type: object
+      required: [ amount, category, date ]
+      properties:
+        amount:
+          type: number
+          description: Сумма транзакции (отрицательная для расходов, положительная для доходов)
+          example: -1000
+        category:
+          type: string
+          description: Название категории
+          example: Продукты
+        date:
+          type: string
+          format: date
+          description: Дата транзакции (формат YYYY-MM-DD)
+          example: 2023-04-01
+        description:
+          type: string
+          description: Описание транзакции
+          example: Покупка продуктов в магазине
+        goal_id:
+          type: integer
+          nullable: true
+          description: ID цели, к которой относится транзакция (null если не связана с целью)
+          example: null
+
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор транзакции
+          example: 1
+        amount:
+          type: number
+          description: Сумма транзакции (отрицательная для расходов, положительная для доходов)
+          example: -1000
+        category:
+          type: string
+          description: Название категории
+          example: Продукты
+        date:
+          type: string
+          format: date
+          description: Дата транзакции
+          example: 2023-04-01
+        description:
+          type: string
+          description: Описание транзакции
+          example: Покупка продуктов в магазине
+        goal_id:
+          type: integer
+          nullable: true
+          description: ID цели, к которой относится транзакция
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          description: Дата создания записи о транзакции
+          example: 2023-04-01T12:00:00Z
+
+    LimitRequest:
+      type: object
+      required: [ category_id, amount, period ]
+      properties:
+        category_id:
+          type: integer
+          description: ID категории, для которой устанавливается лимит
+          example: 1
+        amount:
+          type: number
+          minimum: 0
+          description: Сумма лимита (должна быть положительной)
+          example: 5000
+        period:
+          type: string
+          enum: [ DAILY, WEEKLY, MONTHLY, YEARLY ]
+          description: Период действия лимита
+          example: MONTHLY
+
+    LimitResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор лимита
+          example: 1
+        category:
+          $ref: '#/components/schemas/CategoryResponse'
+        amount:
+          type: number
+          description: Сумма лимита
+          example: 5000
+        period:
+          type: string
+          description: Период действия лимита
+          example: MONTHLY
+        current_spending:
+          type: number
+          description: Текущие расходы по категории за указанный период
+          example: 2500
+
+    GoalRequest:
+      type: object
+      required: [ name, target_amount, target_date, priority ]
+      properties:
+        name:
+          type: string
+          description: Название цели
+          example: Новый ноутбук
+        target_amount:
+          type: number
+          format: double
+          minimum: 0
+          description: Целевая сумма
+          example: 150000
+        target_date:
+          type: string
+          format: date
+          description: Дата достижения цели
+          example: 2023-09-01
+        priority:
+          type: string
+          enum: [ LOW, MEDIUM, HIGH ]
+          description: Приоритет цели
+          example: HIGH
+
+    GoalResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор цели
+          example: 1
+        name:
+          type: string
+          description: Название финансовой цели
+          example: Новый автомобиль
+        target_amount:
+          type: number
+          description: Целевая сумма
+          example: 1000000
+        current_amount:
+          type: number
+          description: Текущая накопленная сумма
+          example: 150000
+        target_date:
+          type: string
+          format: date
+          description: Целевая дата достижения цели
+          example: 2024-12-31
+        priority:
+          type: string
+          description: Приоритет цели
+          example: HIGH
+
+    GoalPlanResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор цели
+          example: 1
+        name:
+          type: string
+          description: Название финансовой цели
+          example: Новый автомобиль
+        description:
+          type: string
+          description: Описание финансовой цели
+          example: Накопить на новый автомобиль
+        target_amount:
+          type: number
+          description: Целевая сумма
+          example: 1000000
+        current_amount:
+          type: number
+          description: Текущая накопленная сумма
+          example: 150000
+        target_date:
+          type: string
+          format: date
+          description: Целевая дата достижения цели
+          example: 2024-12-31
+        priority:
+          type: string
+          description: Приоритет цели
+          example: HIGH
+        days_left:
+          type: integer
+          description: Количество дней до целевой даты
+          example: 365
+        daily_contribution:
+          type: number
+          description: Рекомендуемый ежедневный взнос для достижения цели
+          example: 2328.77
+        monthly_contribution:
+          type: number
+          description: Рекомендуемый ежемесячный взнос для достижения цели
+          example: 70000
+        created_at:
+          type: string
+          format: date-time
+          description: Дата создания цели
+          example: 2023-04-01T12:00:00Z
+
+    GoalDetailResponse:
+      type: object
+      properties:
+        goal:
+          $ref: '#/components/schemas/GoalResponse'
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionResponse'
+          description: Список транзакций, связанных с целью
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Процент выполнения цели (0-100)
+          example: 15
+
+    ReportRequest:
+      type: object
+      properties:
+        period:
+          type: string
+          enum: [ DAILY, WEEKLY, MONTHLY, YEARLY ]
+          description: Период отчета
+          example: MONTHLY
+        dateFrom:
+          type: string
+          format: date
+          description: Дата начала периода (формат YYYY-MM-DD)
+          example: 2023-01-01
+        dateTo:
+          type: string
+          format: date
+          description: Дата окончания периода (формат YYYY-MM-DD)
+          example: 2023-01-31
+
+    ReportResponse:
+      type: object
+      properties:
+        period:
+          type: string
+          description: Период отчета
+          example: MONTHLY
+        income:
+          type: number
+          description: Общая сумма доходов за период
+          example: 50000
+        expenses:
+          type: number
+          description: Общая сумма расходов за период
+          example: 25000
+        balance:
+          type: number
+          description: Баланс (доходы - расходы)
+          example: 25000
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryReport'
+          description: Распределение расходов по категориям
+
+    CategoryReport:
+      type: object
+      properties:
+        category:
+          type: string
+          description: Название категории
+          example: Продукты
+        amount:
+          type: number
+          description: Сумма расходов по категории
+          example: 10000
+        percentage:
+          type: number
+          description: Процент от общей суммы расходов
+          example: 40
+
+    AnalysisResponse:
+      type: object
+      properties:
+        period:
+          type: string
+          description: Период анализа
+          example: MONTHLY
+        categories:
+          type: object
+          additionalProperties:
+            type: number
+          description: Распределение расходов по категориям
+          example:
+            Продукты: 10000
+            Транспорт: 5000
+            Развлечения: 8000
+            Прочее: 2000
+        anomalies:
+          type: array
+          items:
+            type: string
+          description: Выявленные аномалии в расходах
+          example:
+            - Расходы на развлечения выросли на 60% по сравнению с предыдущим месяцем
+        forecast:
+          type: object
+          properties:
+            balance:
+              type: number
+              description: Прогнозируемый баланс на конец следующего периода
+              example: 20000
+            risk_level:
+              type: string
+              enum: [ low, medium, high ]
+              description: Уровень финансового риска
+              example: low
+
+    AIChatResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Основное сообщение от AI
+          example: Вот несколько рекомендаций по оптимизации расходов на продукты
+        advice:
+          type: array
+          items:
+            type: string
+          description: Список рекомендаций
+          example:
+            - Составляйте список покупок заранее и придерживайтесь его
+            - Сравнивайте цены в разных магазинах
+            - Покупайте сезонные продукты
+            - Используйте программы лояльности и купоны
+        actions:
+          type: array
+          items:
+            type: string
+          description: Список рекомендуемых действий в приложении
+          example:
+            - Установить лимит на категорию 'Продукты'
+            - Создать подкатегории для лучшего отслеживания расходов
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: HTTP статус код ошибки
+          example: 404
+        message:
+          type: string
+          description: Сообщение об ошибке
+          example: Категория с ID 999 не найдена
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+          example: 2023-04-01T12:00:00Z
+        path:
+          type: string
+          description: Путь запроса, вызвавшего ошибку
+          example: /api/categories/999
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: HTTP статус код ошибки
+          example: 400
+        message:
+          type: string
+          description: Общее сообщение об ошибке
+          example: Ошибка валидации данных
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+          example: 2023-04-01T12:00:00Z
+        path:
+          type: string
+          description: Путь запроса, вызвавшего ошибку
+          example: /api/categories
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+          description: Детальные ошибки валидации по полям
+          example:
+            name: Название категории не может быть пустым
+            icon: Иконка должна быть указана
+
+paths:
+  /auth/register:
+    post:
+      tags: [ Authentication ]
+      summary: Регистрация нового пользователя
+      description: |
+        Регистрирует нового пользователя в системе и возвращает JWT токен для аутентификации.
+        
+        Требования к данным:
+        - Email должен быть уникальным и соответствовать формату email
+        - Пароль должен содержать минимум 8 символов, заглавную, прописную, цифру
+        - Имя пользователя не должно быть пустым
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              example1:
+                summary: Пример запроса на регистрацию
+                value:
+                  email: user@example.com
+                  password: Password123
+                  name: Иван Иванов
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                example1:
+                  summary: Пример успешного ответа
+                  value:
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    email: user@example.com
+                    name: Иван Иванов
+                    ai_access_enabled: false
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+              examples:
+                example1:
+                  summary: Пример ошибки валидации
+                  value:
+                    status: 400
+                    message: Ошибка валидации данных
+                    timestamp: 2023-04-01T12:00:00Z
+                    path: /auth/register
+                    errors:
+                      email: Email должен быть корректным
+                      password: Пароль должен содержать минимум 6 символов
+        '409':
+          description: Пользователь с таким email уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                example1:
+                  summary: Пример ошибки дублирования
+                  value:
+                    status: 409
+                    message: Пользователь с email user@example.com уже существует
+                    timestamp: 2023-04-01T12:00:00Z
+                    path: /auth/register
+
+  /auth/login:
+    post:
+      tags: [ Authentication ]
+      summary: Аутентификация пользователя
+      description: |
+        Аутентифицирует пользователя по email и паролю, возвращает JWT токен для дальнейшей авторизации.
+        
+        В случае успешной аутентификации возвращается токен, который необходимо использовать в заголовке 
+        Authorization для доступа к защищенным ресурсам.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              example1:
+                summary: Пример запроса на вход
+                value:
+                  email: user@example.com
+                  password: password123
+      responses:
+        '200':
+          description: Пользователь успешно аутентифицирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                example1:
+                  summary: Пример успешного ответа
+                  value:
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    email: user@example.com
+                    name: Иван Иванов
+                    ai_access_enabled: false
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Неверный email или пароль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                example1:
+                  summary: Пример ошибки аутентификации
+                  value:
+                    status: 401
+                    message: Неверный email или пароль
+                    timestamp: 2023-04-01T12:00:00Z
+                    path: /auth/login
+
+  /auth/logout:
+    post:
+      tags: [ Authentication ]
+      summary: Выход из системы
+      description: |
+        Выполняет выход пользователя из системы, инвалидирует текущий JWT токен.
+        
+        После успешного выхода текущий токен становится недействительным и не может быть использован 
+        для доступа к защищенным ресурсам.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '204':
+          description: Пользователь успешно вышел из системы
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /profile:
+    get:
+      tags: [ Profile ]
+      summary: Получить данные профиля
+      description: |
+        Возвращает данные профиля текущего пользователя, включая информацию о подписке.
+        
+        Требуется JWT токен для авторизации.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Данные профиля
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с данными профиля
+                  value:
+                    id: 1
+                    email: user@example.com
+                    name: Иван Иванов
+                    ai_access_enabled: false
+                    created_at: 2023-04-01T12:00:00Z
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [ Profile ]
+      summary: Обновить данные профиля
+      description: |
+        Обновляет данные профиля текущего пользователя.
+        
+        Можно обновить email, имя и пароль. Если какое-то поле не указано, оно остается без изменений.
+        При обновлении email проверяется его уникальность.
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+            examples:
+              example1:
+                summary: Пример запроса на обновление профиля
+                value:
+                  email: new.email@example.com
+                  name: Петр Петров
+                  password: newpassword123
+      responses:
+        '200':
+          description: Профиль успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с обновленными данными
+                  value:
+                    id: 1
+                    email: new.email@example.com
+                    name: Петр Петров
+                    ai_access_enabled: false
+                    created_at: 2023-04-01T12:00:00Z
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Пользователь с таким email уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subscription:
+    get:
+      tags: [ Subscription ]
+      summary: Получить информацию о подписке
+      description: |
+        Возвращает информацию о текущей подписке пользователя, включая статус доступа к AI-рекомендациям.
+        
+        Требуется JWT токен для авторизации.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Информация о подписке
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с информацией о подписке без доступа к ИИ
+                  value:
+                    ai_access_enabled: false
+                    features:
+                      - Базовый учет доходов и расходов
+                      - Неограниченное количество категорий
+                      - Неограниченное количество транзакций
+                example2:
+                  summary: Пример ответа с информацией о подписке с доступом к ИИ
+                  value:
+                    ai_access_enabled: true
+                    features:
+                      - Базовый учет доходов и расходов
+                      - Неограниченное количество категорий
+                      - Неограниченное количество транзакций
+                      - Доступ к AI-рекомендациям
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [ Subscription ]
+      summary: Включить доступ к AI-рекомендациям
+      description: |
+        Включает доступ к AI-рекомендациям для текущего пользователя.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Доступ к AI-рекомендациям успешно включен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+              examples:
+                example1:
+                  summary: Пример ответа после включения доступа к ИИ
+                  value:
+                    ai_access_enabled: true
+                    features:
+                      - Базовый учет доходов и расходов
+                      - Неограниченное количество категорий
+                      - Неограниченное количество транзакций
+                      - Доступ к AI-рекомендациям
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [ Subscription ]
+      summary: Отключить доступ к AI-рекомендациям
+      description: |
+        Отключает доступ к AI-рекомендациям для текущего пользователя.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '204':
+          description: Доступ к AI-рекомендациям успешно отключен
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /categories:
+    get:
+      tags: [ Categories ]
+      summary: Получить список категорий
+      description: |
+        Возвращает список категорий текущего пользователя.
+        
+        Категории могут быть иерархическими (иметь родительскую категорию).
+        Для пользователей с подпиской FREE доступно не более 3 категорий.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Список категорий
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+              examples:
+                example1:
+                  summary: Пример ответа со списком категорий
+                  value:
+                    - id: 1
+                      name: Продукты
+                      parent_id: null
+                      icon: shopping_cart
+                    - id: 2
+                      name: Транспорт
+                      parent_id: null
+                      icon: directions_car
+                    - id: 3
+                      name: Развлечения
+                      parent_id: null
+                      icon: movie
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [ Categories ]
+      summary: Создать новую категорию
+      description: |
+        Создает новую категорию для текущего пользователя.
+        
+        Для пользователей с подпиской FREE доступно создание не более 3 категорий.
+        Название категории должно быть уникальным для пользователя.
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+            examples:
+              example1:
+                summary: Пример запроса на создание категории
+                value:
+                  name: Продукты
+                  parent_id: null
+                  icon: shopping_cart
+      responses:
+        '201':
+          description: Категория успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с созданной категорией
+                  value:
+                    id: 1
+                    name: Продукты
+                    parent_id: null
+                    icon: shopping_cart
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Категория с таким названием уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /categories/{id}:
+    get:
+      tags: [ Categories ]
+      summary: Получить категорию по ID
+      description: |
+        Возвращает информацию о категории по ее ID.
+        
+        Категория должна принадлежать текущему пользователю.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/categoryId'
+      responses:
+        '200':
+          description: Информация о категории
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с информацией о категории
+                  value:
+                    id: 1
+                    name: Продукты
+                    parent_id: null
+                    icon: shopping_cart
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Категория не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [ Categories ]
+      summary: Обновить категорию
+      description: |
+        Обновляет информацию о категории.
+        
+        Категория должна принадлежать текущему пользователю.
+        При обновлении названия проверяется его уникальность.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/categoryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+            examples:
+              example1:
+                summary: Пример запроса на обновление категории
+                value:
+                  name: Продукты питания
+                  parent_id: null
+                  icon: restaurant
+      responses:
+        '200':
+          description: Категория успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с обновленной категорией
+                  value:
+                    id: 1
+                    name: Продукты питания
+                    parent_id: null
+                    icon: restaurant
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Категория не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Категория с таким названием уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [ Categories ]
+      summary: Удалить категорию
+      description: |
+        Удаляет категорию по ее ID.
+        
+        Категория должна принадлежать текущему пользователю.
+        Нельзя удалить категорию, которая используется в транзакциях.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/categoryId'
+      responses:
+        '204':
+          description: Категория успешно удалена
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Категория не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Категория используется в транзакциях
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                example1:
+                  summary: Пример ошибки при попытке удаления используемой категории
+                  value:
+                    status: 409
+                    message: Невозможно удалить категорию, так как она используется в транзакциях
+                    timestamp: 2023-04-01T12:00:00Z
+                    path: /categories/1
+
+  /transactions:
+    get:
+      tags: [ Transactions ]
+      summary: Получить список транзакций
+      description: |
+        Возвращает список транзакций текущего пользователя с возможностью фильтрации.
+        
+        Можно фильтровать транзакции по периоду и категории.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Дата начала периода (формат YYYY-MM-DD)
+          example: 2023-01-01
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Дата окончания периода (формат YYYY-MM-DD)
+          example: 2023-01-31
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Название категории
+          example: Продукты
+      responses:
+        '200':
+          description: Список транзакций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionResponse'
+              examples:
+                example1:
+                  summary: Пример ответа со списком транзакций
+                  value:
+                    - id: 1
+                      amount: -1000
+                      category: Продукты
+                      date: 2023-01-15
+                      description: Покупка продуктов в магазине
+                      goal_id: null
+                      created_at: 2023-01-15T14:30:00Z
+                    - id: 2
+                      amount: -500
+                      category: Транспорт
+                      date: 2023-01-20
+                      description: Такси
+                      goal_id: null
+                      created_at: 2023-01-20T18:45:00Z
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [ Transactions ]
+      summary: Создать новую транзакцию
+      description: |
+        Создает новую транзакцию для текущего пользователя.
+        
+        Сумма транзакции может быть положительной (доход) или отрицательной (расход).
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+            examples:
+              example1:
+                summary: Пример запроса на создание транзакции (расход)
+                value:
+                  amount: -1000
+                  category: Продукты
+                  date: 2023-04-01
+                  description: Покупка продуктов в магазине
+                  goal_id: null
+              example2:
+                summary: Пример запроса на создание транзакции (доход)
+                value:
+                  amount: 50000
+                  category: Зарплата
+                  date: 2023-04-01
+                  description: Зарплата за март
+                  goal_id: null
+      responses:
+        '201':
+          description: Транзакция успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с созданной транзакцией
+                  value:
+                    id: 1
+                    amount: -1000
+                    category: Продукты
+                    date: 2023-04-01
+                    description: Покупка продуктов в магазине
+                    goal_id: null
+                    created_at: 2023-04-01T12:00:00Z
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Категория или цель не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /limits:
+    get:
+      tags: [ Limits ]
+      summary: Получить список лимитов
+      description: |
+        Возвращает список лимитов расходов текущего пользователя.
+        
+        Лимиты позволяют контролировать расходы по категориям за определенный период.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Список лимитов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LimitResponse'
+              examples:
+                example1:
+                  summary: Пример ответа со списком лимитов
+                  value:
+                    - id: 1
+                      category:
+                        id: 1
+                        name: Продукты
+                        parent_id: null
+                        icon: shopping_cart
+                      amount: 10000
+                      period: MONTHLY
+                      current_spending: 5000
+                    - id: 2
+                      category:
+                        id: 3
+                        name: Развлечения
+                        parent_id: null
+                        icon: movie
+                      amount: 5000
+                      period: MONTHLY
+                      current_spending: 2000
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [ Limits ]
+      summary: Создать новый лимит
+      description: |
+        Создает новый лимит расходов для указанной категории.
+        
+        Для каждой категории может быть установлен только один лимит на определенный период.
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitRequest'
+            examples:
+              example1:
+                summary: Пример запроса на создание лимита
+                value:
+                  category_id: 1
+                  amount: 10000
+                  period: MONTHLY
+      responses:
+        '201':
+          description: Лимит успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с созданным лимитом
+                  value:
+                    id: 1
+                    category:
+                      id: 1
+                      name: Продукты
+                      parent_id: null
+                      icon: shopping_cart
+                    amount: 10000
+                    period: MONTHLY
+                    current_spending: 0
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Категория не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Лимит для этой категории уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                example1:
+                  summary: Пример ошибки при создании дублирующего лимита
+                  value:
+                    status: 409
+                    message: Лимит для этой категории уже существует
+                    timestamp: 2023-04-01T12:00:00Z
+                    path: /limits
+
+  /limits/{id}:
+    get:
+      tags: [ Limits ]
+      summary: Получить лимит по ID
+      description: |
+        Возвращает информацию о лимите по его ID.
+        
+        Лимит должен принадлежать текущему пользователю.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/limitId'
+      responses:
+        '200':
+          description: Информация о лимите
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с информацией о лимите
+                  value:
+                    id: 1
+                    category:
+                      id: 1
+                      name: Продукты
+                      parent_id: null
+                      icon: shopping_cart
+                    amount: 10000
+                    period: MONTHLY
+                    current_spending: 5000
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Лимит не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [ Limits ]
+      summary: Обновить лимит
+      description: |
+        Обновляет информацию о лимите.
+        
+        Лимит должен принадлежать текущему пользователю.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/limitId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitRequest'
+            examples:
+              example1:
+                summary: Пример запроса на обновление лимита
+                value:
+                  category_id: 1
+                  amount: 15000
+                  period: MONTHLY
+      responses:
+        '200':
+          description: Лимит успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с обновленным лимитом
+                  value:
+                    id: 1
+                    category:
+                      id: 1
+                      name: Продукты
+                      parent_id: null
+                      icon: shopping_cart
+                    amount: 15000
+                    period: MONTHLY
+                    current_spending: 5000
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Лимит или категория не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [ Limits ]
+      summary: Удалить лимит
+      description: |
+        Удаляет лимит по его ID.
+        
+        Лимит должен принадлежать текущему пользователю.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/limitId'
+      responses:
+        '204':
+          description: Лимит успешно удален
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Лимит не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /goals:
+    get:
+      tags: [ Goals ]
+      summary: Получить список целей
+      description: |
+        Возвращает список финансовых целей текущего пользователя.
+        
+        Финансовые цели позволяют планировать накопления на конкретные нужды.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Список целей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GoalResponse'
+              examples:
+                example1:
+                  summary: Пример ответа со списком целей
+                  value:
+                    - id: 1
+                      name: Новый автомобиль
+                      target_amount: 1000000
+                      current_amount: 150000
+                      target_date: 2024-12-31
+                      priority: HIGH
+                    - id: 2
+                      name: Отпуск
+                      target_amount: 200000
+                      current_amount: 50000
+                      target_date: 2023-07-01
+                      priority: MEDIUM
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [ Goals ]
+      summary: Создать новую цель
+      description: |
+        Создает новую финансовую цель для текущего пользователя.
+        
+        При создании цели автоматически рассчитывается план накопления.
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+            examples:
+              example1:
+                summary: Пример запроса на создание цели
+                value:
+                  name: Новый ноутбук
+                  description: Накопить на новый ноутбук
+                  target_amount: 150000
+                  target_date: 2023-09-01
+                  priority: MEDIUM
+      responses:
+        '201':
+          description: Цель успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalPlanResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с созданной целью
+                  value:
+                    id: 3
+                    name: Новый ноутбук
+                    description: Накопить на новый ноутбук
+                    target_amount: 150000
+                    current_amount: 0
+                    target_date: 2023-09-01
+                    priority: MEDIUM
+                    days_left: 153
+                    daily_contribution: 980.39
+                    monthly_contribution: 29411.76
+                    created_at: 2023-04-01T12:00:00Z
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /goals/{id}:
+    get:
+      tags: [ Goals ]
+      summary: Получить детальную информацию о цели
+      description: |
+        Возвращает детальную информацию о цели, включая связанные транзакции и прогресс.
+        
+        Цель должна принадлежать текущему пользователю.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/goalId'
+      responses:
+        '200':
+          description: Детальная информация о цели
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalDetailResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с детальной информацией о цели
+                  value:
+                    goal:
+                      id: 1
+                      name: Новый автомобиль
+                      target_amount: 1000000
+                      current_amount: 150000
+                      target_date: 2024-12-31
+                      priority: HIGH
+                    transactions:
+                      - id: 5
+                        amount: 50000
+                        category: Накопления
+                        date: 2023-03-01
+                        description: Перевод на цель
+                        created_at: 2023-03-01T10:00:00Z
+                      - id: 8
+                        amount: 100000
+                        category: Накопления
+                        date: 2023-04-01
+                        description: Перевод на цель
+                        created_at: 2023-04-01T10:00:00Z
+                    progress: 15
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Цель не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [ Goals ]
+      summary: Обновить цель
+      description: |
+        Обновляет информацию о цели.
+        
+        Цель должна принадлежать текущему пользователю.
+        При обновлении цели автоматически пересчитывается план накопления.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/goalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalRequest'
+            examples:
+              example1:
+                summary: Пример запроса на обновление цели
+                value:
+                  name: Новый ноутбук
+                  description: Накопить на новый ноутбук MacBook Pro
+                  target_amount: 180000
+                  target_date: 2023-10-01
+                  priority: HIGH
+      responses:
+        '200':
+          description: Цель успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalPlanResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с обновленной целью
+                  value:
+                    id: 3
+                    name: Новый ноутбук
+                    description: Накопить на новый ноутбук MacBook Pro
+                    target_amount: 180000
+                    current_amount: 0
+                    target_date: 2023-10-01
+                    priority: HIGH
+                    days_left: 183
+                    daily_contribution: 983.61
+                    monthly_contribution: 29508.20
+                    created_at: 2023-04-01T12:00:00Z
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Цель не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [ Goals ]
+      summary: Удалить цель
+      description: |
+        Удаляет цель по ее ID.
+        
+        Цель должна принадлежать текущему пользователю.
+        Нельзя удалить цель, которая используется в транзакциях.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/goalId'
+      responses:
+        '204':
+          description: Цель успешно удалена
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Цель не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Цель используется в транзакциях
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                example1:
+                  summary: Пример ошибки при попытке удаления используемой цели
+                  value:
+                    status: 409
+                    message: Невозможно удалить цель, так как она используется в транзакциях
+                    timestamp: 2023-04-01T12:00:00Z
+                    path: /goals/1
+
+  /reports:
+    get:
+      tags: [ Reports ]
+      summary: Получить отчет за период
+      description: |
+        Возвращает финансовый отчет за указанный период.
+        
+        Отчет включает информацию о доходах, расходах, балансе и распределении расходов по категориям.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ DAILY, WEEKLY, MONTHLY, YEARLY ]
+          description: Период отчета
+          example: MONTHLY
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Дата начала периода (формат YYYY-MM-DD)
+          example: 2023-01-01
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Дата окончания периода (формат YYYY-MM-DD)
+          example: 2023-01-31
+      responses:
+        '200':
+          description: Отчет за период
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с отчетом за месяц
+                  value:
+                    period: MONTHLY
+                    income: 50000
+                    expenses: 25000
+                    balance: 25000
+                    categories:
+                      - category: Продукты
+                        amount: 10000
+                        percentage: 40
+                      - category: Транспорт
+                        amount: 5000
+                        percentage: 20
+                      - category: Развлечения
+                        amount: 8000
+                        percentage: 32
+                      - category: Прочее
+                        amount: 2000
+                        percentage: 8
+        '400':
+          description: Некорректные параметры
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics:
+    get:
+      tags: [ Reports ]
+      summary: Получить аналитику
+      description: |
+        Возвращает аналитические данные по финансам пользователя.
+        
+        Аналитика включает информацию о расходах по категориям, аномалиях и прогнозе.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ MONTHLY, YEARLY ]
+          description: Период анализа
+          example: MONTHLY
+      responses:
+        '200':
+          description: Аналитические данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с аналитикой за месяц
+                  value:
+                    period: MONTHLY
+                    categories:
+                      Продукты: 10000
+                      Транспорт: 5000
+                      Развлечения: 8000
+                      Прочее: 2000
+                    anomalies:
+                      - Расходы на развлечения выросли на 60% по сравнению с предыдущим месяцем
+                    forecast:
+                      balance: 20000
+                      risk_level: low
+        '400':
+          description: Некорректные параметры
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai/chat:
+    post:
+      tags: [ AI ]
+      summary: Получить AI-рекомендации
+      description: |
+        Возвращает рекомендации по управлению финансами на основе AI.
+        
+        Для доступа к этому эндпоинту необходимо активировать опцию AI-доступа.
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ message ]
+              properties:
+                message:
+                  type: string
+                  description: Запрос пользователя
+                  example: Как мне оптимизировать расходы на продукты?
+            examples:
+              example1:
+                summary: Пример запроса на получение рекомендаций
+                value:
+                  message: Как мне оптимизировать расходы на продукты?
+      responses:
+        '200':
+          description: AI-рекомендации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIChatResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с рекомендациями
+                  value:
+                    message:
+                      Вот несколько рекомендаций по оптимизации расходов на продукты:
+                    advice:
+                      - Составляйте список покупок заранее и придерживайтесь его
+                      - Сравнивайте цены в разных магазинах
+                      - Покупайте сезонные продукты
+                      - Используйте программы лояльности и купоны
+                    actions:
+                      - Установить лимит на категорию 'Продукты'
+                      - Создать подкатегории для лучшего отслеживания расходов
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен (требуется активация AI-доступа)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                example1:
+                  summary: Пример ошибки при отсутствии доступа к AI
+                  value:
+                    status: 403
+                    message: Для доступа к AI-рекомендациям необходимо активировать соответствующую опцию
+                    timestamp: 2023-04-01T12:00:00Z
+                    path: /ai/chat
+
+  /ai/analysis:
+    get:
+      tags: [ AI ]
+      summary: Получить AI-анализ финансов
+      description: |
+        Возвращает анализ финансового состояния пользователя на основе AI.
+        
+        Для доступа к этому эндпоинту необходимо активировать опцию AI-доступа.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: AI-анализ финансов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'
+              examples:
+                example1:
+                  summary: Пример ответа с анализом финансов
+                  value:
+                    period: MONTHLY
+                    categories:
+                      Продукты: 10000
+                      Транспорт: 5000
+                      Развлечения: 8000
+                      Прочее: 2000
+                    anomalies:
+                      - Расходы на развлечения выросли на 60% по сравнению с предыдущим месяцем
+                    forecast:
+                      balance: 20000
+                      risk_level: low
+                    recommendations:
+                      - Рекомендуется сократить расходы на развлечения на 20%
+                      - Рассмотрите возможность увеличения накоплений на 5000 в месяц
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен (требуется активация AI-доступа)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
