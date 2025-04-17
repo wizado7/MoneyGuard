@@ -2,6 +2,7 @@ package src.main.util;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import src.main.model.LimitPeriod;
 
@@ -56,19 +57,39 @@ public class DateUtil {
      * Возвращает начало периода для указанного типа периода
      */
     public static LocalDate getStartOfPeriod(LimitPeriod period) {
-        LocalDate today = LocalDate.now();
+        LocalDate now = LocalDate.now();
         
         switch (period) {
             case DAILY:
-                return today;
+                return now;
             case WEEKLY:
-                return getStartOfWeek(today);
+                return now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
             case MONTHLY:
-                return getStartOfMonth(today);
+                return now.with(TemporalAdjusters.firstDayOfMonth());
             case YEARLY:
-                return getStartOfYear(today);
+                return now.with(TemporalAdjusters.firstDayOfYear());
             default:
-                return today;
+                throw new IllegalArgumentException("Неизвестный период: " + period);
+        }
+    }
+
+    /**
+     * Возвращает начало периода для указанного типа периода
+     */
+    public static LocalDateTime getStartDateFromPeriod(String period) {
+        LocalDate now = LocalDate.now();
+        switch (period.toUpperCase()) {
+            case "ДЕНЬ":
+                return now.atStartOfDay();
+            case "НЕДЕЛЯ":
+                return now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay();
+            case "МЕСЯЦ":
+                return now.with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay();
+            case "ГОД":
+                return now.with(TemporalAdjusters.firstDayOfYear()).atStartOfDay();
+            default:
+                // По умолчанию возвращаем начало текущего месяца или выбрасываем исключение
+                return now.with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay();
         }
     }
 } 

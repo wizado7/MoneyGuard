@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GoalResponse {
-    private Long id;
+    private Integer id;
     private String name;
     private BigDecimal target_amount;
     private BigDecimal current_amount;

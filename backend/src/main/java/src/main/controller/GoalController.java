@@ -31,14 +31,19 @@ public class GoalController {
     private final GoalService goalService;
 
     @GetMapping
-    public ResponseEntity<List<GoalResponse>> getGoals() {
+    public ResponseEntity<List<GoalResponse>> getAllGoals() {
         log.debug("REST запрос на получение списка целей");
-        return ResponseEntity.ok(goalService.getGoals());
+        return ResponseEntity.ok(goalService.getAllGoals());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<GoalDetailResponse> getGoalDetails(
-            @PathVariable @Positive(message = "ID должен быть положительным числом") Long id) {
+    public ResponseEntity<GoalResponse> getGoalById(@PathVariable Integer id) {
+        log.debug("REST запрос на получение цели с ID: {}", id);
+        return ResponseEntity.ok(goalService.getGoalById(id));
+    }
+
+    @GetMapping("/{id}/details")
+    public ResponseEntity<GoalDetailResponse> getGoalDetails(@PathVariable Integer id) {
         log.debug("REST запрос на получение детальной информации о цели с ID: {}", id);
         try {
             return ResponseEntity.ok(goalService.getGoalDetails(id));
@@ -53,10 +58,10 @@ public class GoalController {
     }
 
     @PostMapping
-    public ResponseEntity<GoalResponse> createGoal(@RequestBody @Valid GoalRequest request) {
-        log.debug("REST запрос на создание цели: {}", request.getName());
+    public ResponseEntity<GoalResponse> createGoal(@RequestBody @Valid GoalRequest goalRequest) {
+        log.debug("REST запрос на создание цели: {}", goalRequest.getName());
         try {
-            GoalResponse response = goalService.createGoal(request);
+            GoalResponse response = goalService.createGoal(goalRequest);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (EntityNotFoundException | OperationNotAllowedException e) {
             throw e;
@@ -67,12 +72,10 @@ public class GoalController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GoalPlanResponse> updateGoal(
-            @PathVariable @Positive(message = "ID должен быть положительным числом") Long id,
-            @RequestBody @Valid GoalRequest request) {
+    public ResponseEntity<GoalPlanResponse> updateGoal(@PathVariable Integer id, @RequestBody @Valid GoalRequest goalRequest) {
         log.debug("REST запрос на обновление цели с ID: {}", id);
         try {
-            return ResponseEntity.ok(goalService.updateGoal(id, request));
+            return ResponseEntity.ok(goalService.updateGoal(id, goalRequest));
         } catch (EntityNotFoundException | InvalidDataException | OperationNotAllowedException e) {
             throw e;
         } catch (Exception e) {
@@ -82,8 +85,7 @@ public class GoalController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteGoal(
-            @PathVariable @Positive(message = "ID должен быть положительным числом") Long id) {
+    public ResponseEntity<Void> deleteGoal(@PathVariable Integer id) {
         log.debug("REST запрос на удаление цели с ID: {}", id);
         try {
             goalService.deleteGoal(id);

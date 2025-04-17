@@ -10,8 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoryResponse {
-    private Long id;
+    private Integer id;
     private String name;
-    private Long parentId;
+    private Integer parentId;
     private String icon;
+    private Boolean isIncome;
+    private String color;
 } 

@@ -11,19 +11,34 @@ import src.main.model.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    
+public interface TransactionRepository extends JpaRepository<Transaction, Integer> {
+
     List<Transaction> findByUserOrderByDateDesc(User user);
-    
-    List<Transaction> findByUserAndDateBetweenOrderByDateDesc(User user, LocalDate dateFrom, LocalDate dateTo);
-    
-    List<Transaction> findByUserAndCategoryIdOrderByDateDesc(User user, Long categoryId);
-    
+
+    Optional<Transaction> findByIdAndUser(Integer id, User user);
+
+    List<Transaction> findByUserAndDateBetweenOrderByDateDesc(User user, LocalDate startDate, LocalDate endDate);
+
+    List<Transaction> findByUserAndCategoryIdOrderByDateDesc(User user, Integer categoryId);
+
+    List<Transaction> findByUserAndCategoryIdAndDateBetweenOrderByDateDesc(User user, Integer categoryId, LocalDate startDate, LocalDate endDate);
+
+    @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.user = :user AND t.category = :category AND t.date >= :startDate AND t.amount < 0")
+    BigDecimal sumAmountByUserAndCategoryAndDateAfter(
+            @Param("user") User user,
+            @Param("category") Category category,
+            @Param("startDate") LocalDateTime startDate
+    );
+
+    boolean existsByCategoryId(Integer categoryId);
+
     List<Transaction> findByUserAndGoal(User user, Goal goal);
-    
-    @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.user = :user AND t.category = :category AND t.date BETWEEN :dateFrom AND :dateTo AND t.amount < 0")
-    BigDecimal sumByUserAndCategoryAndPeriod(@Param("user") User user, @Param("category") Category category, @Param("dateFrom") LocalDate dateFrom, @Param("dateTo") LocalDate dateTo);
-} 
+
+    Optional<Transaction> findByIdAndUserId(Integer id, Integer userId);
+
+}

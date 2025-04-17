@@ -35,10 +35,16 @@ public class SecurityConfig {
         log.debug("Configuring SecurityFilterChain");
         try {
             http
-                    .csrf(csrf -> csrf.disable())
+                    .csrf(AbstractHttpConfigurer::disable)
                     .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                     .authorizeHttpRequests(auth -> auth
-                            .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                            .requestMatchers(
+                                    "/auth/**",
+                                    "/swagger-ui/**",
+                                    "/v3/api-docs/**",
+                                    "/swagger-ui.html",
+                                    "/webjars/**"
+                            ).permitAll()
                             .anyRequest().authenticated()
                     )
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -58,9 +64,10 @@ public class SecurityConfig {
         log.debug("Configuring CORS");
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

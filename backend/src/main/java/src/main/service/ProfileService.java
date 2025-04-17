@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import src.main.dto.profile.ProfileResponse;
@@ -71,9 +72,24 @@ public class ProfileService {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+    public User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(username)
+                .orElseThrow(() -> {
+                    log.error("Пользователь не найден: {}", username);
+                    return new UsernameNotFoundException("Пользователь " + username + " не найден");
+                });
+    }
+
+    private ProfileResponse mapUserToProfileResponse(User user) {
+        if (user == null) return null;
+        return ProfileResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .aiAccessEnabled(user.isAiAccessEnabled())
+                .subscriptionType(user.getSubscriptionType() != null ? user.getSubscriptionType().name() : null)
+                .subscriptionExpiry(user.getSubscriptionExpiry())
+                .build();
     }
 } 

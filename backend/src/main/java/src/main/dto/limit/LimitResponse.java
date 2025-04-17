@@ -13,9 +13,11 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LimitResponse {
-    private Long id;
-    private CategoryResponse category;
+    private Integer id;
+    private Integer categoryId;
+    private String categoryName;
     private BigDecimal amount;
     private String period;
-    private BigDecimal current_spending;
+    private String userId;
+    private BigDecimal currentUsage;
 } 

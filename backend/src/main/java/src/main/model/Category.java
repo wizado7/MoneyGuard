@@ -1,6 +1,8 @@
 package src.main.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,27 +15,43 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "categories")
+@Table(name = "categories", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "name")
+})
 public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(length = 50)
     private String icon;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Category parent;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @Column(name = "is_income", nullable = false)
+    @Builder.Default
+    private boolean isIncome = false;
+
+    @Column(name = "is_system", nullable = false)
+    @Builder.Default
+    private boolean isSystem = false;
+
+    private String color;
+
+    @Column(name = "icon_name")
+    private String iconName;
+
+    @OneToMany(mappedBy = "parent")
     private List<Category> children;
+
+    @OneToMany(mappedBy = "category")
+    private List<Transaction> transactions;
+
+    @OneToMany(mappedBy = "category")
+    private List<Limit> limits;
 } 

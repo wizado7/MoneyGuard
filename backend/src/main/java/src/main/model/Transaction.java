@@ -20,7 +20,7 @@ public class Transaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -34,14 +34,23 @@ public class Transaction {
     @JoinColumn(name = "goal_id")
     private Goal goal;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
+
+    @Column
+    private String description;
 
     @Column(nullable = false)
     private LocalDate date;
 
-    private String description;
-
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "amount_contributed_to_goal", precision = 10, scale = 2)
+    private BigDecimal amountContributedToGoal;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 } 

@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import src.main.dto.category.CategoryRequest;
 import src.main.dto.category.CategoryResponse;
+import src.main.model.Category;
 import src.main.service.CategoryService;
 import src.main.exception.BusinessException;
 import src.main.exception.EntityNotFoundException;
@@ -18,6 +19,7 @@ import src.main.exception.InvalidDataException;
 import src.main.exception.ConflictException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/categories")
@@ -29,14 +31,10 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<List<CategoryResponse>> getCategories() {
-        log.debug("REST запрос на получение списка категорий");
-        try {
-            return ResponseEntity.ok(categoryService.getCategories());
-        } catch (Exception e) {
-            log.error("Ошибка при получении списка категорий: {}", e.getMessage(), e);
-            throw new BusinessException("Ошибка при получении списка категорий", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
+        log.debug("REST request to get all Categories");
+        List<CategoryResponse> categoryResponses = categoryService.getCategories();
+        return ResponseEntity.ok(categoryResponses);
     }
 
     @PostMapping
@@ -55,7 +53,7 @@ public class CategoryController {
 
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponse> updateCategory(
-            @PathVariable @Positive(message = "ID должен быть положительным числом") Long id,
+            @PathVariable @Positive(message = "ID должен быть положительным числом") Integer id,
             @RequestBody @Valid CategoryRequest request) {
         log.debug("REST запрос на обновление категории с ID: {}", id);
         try {
@@ -70,7 +68,7 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(
-            @PathVariable @Positive(message = "ID должен быть положительным числом") Long id) {
+            @PathVariable @Positive(message = "ID должен быть положительным числом") Integer id) {
         log.debug("REST запрос на удаление категории с ID: {}", id);
         try {
             categoryService.deleteCategory(id);

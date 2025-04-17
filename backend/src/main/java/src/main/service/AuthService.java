@@ -18,6 +18,8 @@ import src.main.repository.UserRepository;
 import src.main.security.JwtService;
 import src.main.exception.DuplicateResourceException;
 import src.main.exception.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
+import src.main.exception.BusinessException;
 
 import java.time.LocalDateTime;
 
@@ -99,5 +101,31 @@ public class AuthService {
         log.debug("Выход пользователя");
         SecurityContextHolder.clearContext();
         log.info("Пользователь успешно вышел");
+    }
+
+    public AuthResponse refreshToken(String refreshToken) {
+        log.debug("Обновление токена");
+        
+        // Проверяем, что refreshToken действителен
+        if (!jwtService.validateToken(refreshToken)) {
+            throw new BusinessException("Недействительный refresh token", HttpStatus.UNAUTHORIZED);
+        }
+        
+        // Извлекаем email из refreshToken
+        String email = jwtService.extractUsername(refreshToken);
+        
+        // Получаем пользователя по email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+        
+        // Генерируем новый access token
+        String newAccessToken = jwtService.generateToken(user);
+        
+        return AuthResponse.builder()
+                .token(newAccessToken)
+                .email(user.getEmail())
+                .name(user.getName())
+                .ai_access_enabled(user.isAiAccessEnabled())
+                .build();
     }
 } 

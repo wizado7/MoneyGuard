@@ -14,7 +14,7 @@
 
 ### Регистрация пользователя
 
-**Endpoint**: `POST /auth/register`
+**Endpoint**: `/api/v1/auth/register`
 
 **Request**:
 ```json
@@ -29,15 +29,18 @@
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "email": "ex@ex.com",
-  "name": "Имя Пользователя",
+  "user": {
+    "id": "1",
+    "email": "ex@ex.com",
+    "name": "Имя Пользователя"
+  },
   "ai_access_enabled": false
 }
 ```
 
 ### Вход в систему
 
-**Endpoint**: `POST /auth/login`
+**Endpoint**: `/api/v1/auth/login`
 
 **Request**:
 ```json
@@ -51,44 +54,27 @@
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "email": "ex@ex.com",
-  "name": "Имя Пользователя",
+  "user": {
+    "id": "1",
+    "email": "ex@ex.com",
+    "name": "Имя Пользователя"
+  },
   "ai_access_enabled": false
 }
 ```
 
 ### Выход из системы
 
-**Endpoint**: `POST /auth/logout`
+**Endpoint**: `/api/v1/auth/logout`
 
 **Headers**:
 - Authorization: Bearer {token}
 
 **Response** (204 No Content)
 
-## Управление профилем
+### Смена пароля
 
-### Получение профиля
-
-**Endpoint**: `GET /profile`
-
-**Headers**:
-- Authorization: Bearer {token}
-
-**Response** (200 OK):
-```json
-{
-  "id": 1,
-  "email": "ex@ex.com",
-  "name": "Имя Пользователя",
-  "ai_access_enabled": false,
-  "created_at": "2023-04-01T12:00:00"
-}
-```
-
-### Обновление профиля
-
-**Endpoint**: `PUT /profile`
+**Endpoint**: `/api/v1/auth/change-password`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -96,20 +82,54 @@
 **Request**:
 ```json
 {
-  "email": "new.ex@ex.com",
+  "currentPassword": "Password123",
+  "newPassword": "Newpassword123"
+}
+```
+
+**Response** (204 No Content)
+
+## Управление профилем
+
+### Получение профиля
+
+**Endpoint**: `/api/v1/profile`
+
+**Headers**:
+- Authorization: Bearer {token}
+
+**Response** (200 OK):
+```json
+{
+  "id": "1",
+  "email": "ex@ex.com",
+  "name": "Имя Пользователя",
+  "profileImage": "https://example.com/image.jpg"
+}
+```
+
+### Обновление профиля
+
+**Endpoint**: `/api/v1/profile`
+
+**Headers**:
+- Authorization: Bearer {token}
+
+**Request**:
+```json
+{
   "name": "Новое Имя",
-  "password": "Newpassword123"
+  "profileImage": "https://example.com/new-image.jpg"
 }
 ```
 
 **Response** (200 OK):
 ```json
 {
-  "id": 1,
-  "email": "new.ex@ex.com",
+  "id": "1",
+  "email": "ex@ex.com",
   "name": "Новое Имя",
-  "ai_access_enabled": false,
-  "created_at": "2023-04-01T12:00:00"
+  "profileImage": "https://example.com/new-image.jpg"
 }
 ```
 
@@ -117,7 +137,7 @@
 
 ### Получение информации о доступе к ИИ
 
-**Endpoint**: `GET /subscription`
+**Endpoint**: `/api/v1/subscription`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -136,7 +156,7 @@
 
 ### Включение доступа к ИИ
 
-**Endpoint**: `POST /subscription`
+**Endpoint**: `/api/v1/subscription`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -156,7 +176,7 @@
 
 ### Отключение доступа к ИИ
 
-**Endpoint**: `DELETE /subscription`
+**Endpoint**: `/api/v1/subscription`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -167,7 +187,7 @@
 
 ### Получение списка категорий
 
-**Endpoint**: `GET /categories`
+**Endpoint**: `/api/v1/categories`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -178,21 +198,24 @@
   {
     "id": 1,
     "name": "Продукты",
-    "parent_id": null,
     "icon": "shopping_cart"
   },
   {
     "id": 2,
     "name": "Транспорт",
-    "parent_id": null,
     "icon": "directions_car"
+  },
+  {
+    "id": 16,
+    "name": "Мои расходы",
+    "icon": "account_balance_wallet"
   }
 ]
 ```
 
 ### Создание категории
 
-**Endpoint**: `POST /categories`
+**Endpoint**: `/api/v1/categories`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -200,25 +223,23 @@
 **Request**:
 ```json
 {
-  "name": "Развлечения",
-  "parent_id": null,
-  "icon": "movie"
+  "name": "Мои расходы",
+  "icon": "account_balance_wallet"
 }
 ```
 
 **Response** (201 Created):
 ```json
 {
-  "id": 3,
-  "name": "Развлечения",
-  "parent_id": null,
-  "icon": "movie"
+  "id": 16,
+  "name": "Мои расходы",
+  "icon": "account_balance_wallet"
 }
 ```
 
 ### Обновление категории
 
-**Endpoint**: `PUT /categories/{id}`
+**Endpoint**: `/api/v1/categories/{id}`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -226,25 +247,23 @@
 **Request**:
 ```json
 {
-  "name": "Кино и театр",
-  "parent_id": 3,
-  "icon": "theater_comedy"
+  "name": "Обновленное название",
+  "icon": "update"
 }
 ```
 
 **Response** (200 OK):
 ```json
 {
-  "id": 4,
-  "name": "Кино и театр",
-  "parent_id": 3,
-  "icon": "theater_comedy"
+  "id": 16,
+  "name": "Обновленное название",
+  "icon": "update"
 }
 ```
 
 ### Удаление категории
 
-**Endpoint**: `DELETE /categories/{id}`
+**Endpoint**: `/api/v1/categories/{id}`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -255,15 +274,13 @@
 
 ### Получение списка транзакций
 
-**Endpoint**: `GET /transactions`
+**Endpoint**: `/api/v1/transactions`
 
 **Headers**:
 - Authorization: Bearer {token}
 
 **Query Parameters**:
-- dateFrom (optional): Дата начала периода (формат: YYYY-MM-DD)
-- dateTo (optional): Дата окончания периода (формат: YYYY-MM-DD)
-- category (optional): ID категории
+- period (optional): day, week, month, year, all
 
 **Response** (200 OK):
 ```json
@@ -289,7 +306,7 @@
 
 ### Создание транзакции
 
-**Endpoint**: `POST /transactions`
+**Endpoint**: `/api/v1/transactions`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -320,7 +337,7 @@
 
 ### Обновление транзакции
 
-**Endpoint**: `PUT /transactions/{id}`
+**Endpoint**: `/api/v1/transactions/{id}`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -350,7 +367,7 @@
 
 ### Удаление транзакции
 
-**Endpoint**: `DELETE /transactions/{id}`
+**Endpoint**: `/api/v1/transactions/{id}`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -361,7 +378,7 @@
 
 ### Получение списка лимитов
 
-**Endpoint**: `GET /limits`
+**Endpoint**: `/api/v1/limits`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -396,7 +413,7 @@
 
 ### Создание лимита
 
-**Endpoint**: `POST /limits`
+**Endpoint**: `/api/v1/limits`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -427,7 +444,7 @@
 
 ### Обновление лимита
 
-**Endpoint**: `PUT /limits/{id}`
+**Endpoint**: `/api/v1/limits/{id}`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -458,7 +475,7 @@
 
 ### Удаление лимита
 
-**Endpoint**: `DELETE /limits/{id}`
+**Endpoint**: `/api/v1/limits/{id}`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -469,7 +486,7 @@
 
 ### Получение списка целей
 
-**Endpoint**: `GET /goals`
+**Endpoint**: `/api/v1/goals`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -498,7 +515,7 @@
 
 ### Получение детальной информации о цели
 
-**Endpoint**: `GET /goals/{id}`
+**Endpoint**: `/api/v1/goals/{id}`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -538,7 +555,7 @@
 
 ### Создание цели
 
-**Endpoint**: `POST /goals`
+**Endpoint**: `/api/v1/goals`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -573,7 +590,7 @@
 
 ### Обновление цели
 
-**Endpoint**: `PUT /goals/{id}`
+**Endpoint**: `/api/v1/goals/{id}`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -608,7 +625,7 @@
 
 ### Удаление цели
 
-**Endpoint**: `DELETE /goals/{id}`
+**Endpoint**: `/api/v1/goals/{id}`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -619,7 +636,7 @@
 
 ### Получение отчета за период
 
-**Endpoint**: `GET /reports`
+**Endpoint**: `/api/v1/reports`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -663,7 +680,7 @@
 
 ### Получение аналитики
 
-**Endpoint**: `GET /analytics`
+**Endpoint**: `/api/v1/analytics`
 
 **Headers**:
 - Authorization: Bearer {token}
@@ -693,7 +710,7 @@
 
 ### Получение AI-рекомендаций
 
-**Endpoint**: `POST /ai/chat`
+**Endpoint**: `/api/v1/ai/chat`
 
 **Headers**:
 - Authorization: Bearer {token}

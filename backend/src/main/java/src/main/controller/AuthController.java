@@ -22,6 +22,7 @@ import src.main.security.JwtService;
 import src.main.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -113,6 +114,19 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Ошибка при выходе пользователя: {}", e.getMessage(), e);
             throw new BusinessException("Ошибка при выходе пользователя", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@RequestBody Map<String, String> request) {
+        log.debug("REST запрос на обновление токена");
+        try {
+            String refreshToken = request.get("refresh_token");
+            AuthResponse response = authService.refreshToken(refreshToken);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении токена: {}", e.getMessage(), e);
+            throw new BusinessException("Ошибка при обновлении токена", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 } 

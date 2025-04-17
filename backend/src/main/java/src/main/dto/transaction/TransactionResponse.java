@@ -18,15 +18,20 @@ import java.time.LocalDateTime;
 public class TransactionResponse implements Serializable {
     private static final long serialVersionUID = 1L;
     
-    private Long id;
+    private Integer id;
     private BigDecimal amount;
     private String category;
+    private Integer categoryId;
     
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate date;
     
     private String description;
+    private Integer goalId;
+    private String userId;
     
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
+    
+    private BigDecimal amountContributedToGoal;
 } 

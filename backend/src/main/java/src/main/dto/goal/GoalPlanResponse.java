@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GoalPlanResponse {
-    private Long id;
+    private Integer id;
     private String name;
     private String description;
     private BigDecimal target_amount;
@@ -25,7 +25,7 @@ public class GoalPlanResponse {
     private BigDecimal daily_contribution;
     private BigDecimal monthly_contribution;
     private LocalDateTime created_at;
-    private GoalResponse goal;
-    private BigDecimal monthly_payment;
+    private String monthly_payment;
     private String optimization_advice;
+    private GoalResponse goal;
 } 

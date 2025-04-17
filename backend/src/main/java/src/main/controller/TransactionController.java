@@ -1,7 +1,6 @@
 package src.main.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -14,12 +13,6 @@ import src.main.dto.transaction.TransactionAIResponse;
 import src.main.dto.transaction.TransactionRequest;
 import src.main.dto.transaction.TransactionResponse;
 import src.main.service.TransactionService;
-import src.main.exception.BusinessException;
-import src.main.exception.EntityNotFoundException;
-import src.main.exception.InvalidDataException;
-import src.main.exception.OperationNotAllowedException;
-import src.main.exception.ConflictException;
-import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,108 +20,59 @@ import java.util.List;
 @RestController
 @RequestMapping("/transactions")
 @RequiredArgsConstructor
-@Validated
 @Slf4j
 public class TransactionController {
 
     private final TransactionService transactionService;
 
-    @GetMapping
-    public ResponseEntity<?> getTransactions(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
-            @RequestParam(required = false) String category) {
-        log.debug("REST запрос на получение списка транзакций");
-        try {
-            List<TransactionResponse> transactions = transactionService.getTransactions(dateFrom, dateTo, category);
-            return ResponseEntity.ok(transactions);
-        } catch (Exception e) {
-            log.error("Ошибка при получении списка транзакций: {}", e.getMessage(), e);
-            
-            // Если ошибка связана с кэшированием Redis, попробуем получить данные напрямую из БД
-            if (e instanceof org.springframework.data.redis.RedisConnectionFailureException ||
-                e instanceof org.springframework.data.redis.serializer.SerializationException) {
-                try {
-                    // Вызываем метод без кэширования
-                    List<TransactionResponse> transactions = transactionService.getTransactionsWithoutCache(dateFrom, dateTo, category);
-                    return ResponseEntity.ok(transactions);
-                } catch (Exception fallbackEx) {
-                    log.error("Ошибка при получении списка транзакций без кэша: {}", fallbackEx.getMessage(), fallbackEx);
-                    throw new BusinessException("Ошибка при получении списка транзакций", HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-            }
-            
-            throw new BusinessException("Ошибка при получении списка транзакций", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @PostMapping
+    public ResponseEntity<TransactionAIResponse> createTransaction(@Valid @RequestBody TransactionRequest request) {
+        log.debug("REST request to create Transaction : {}", request);
+        TransactionAIResponse response = transactionService.createTransaction(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping
-    public ResponseEntity<TransactionAIResponse> createTransaction(@RequestBody @Valid TransactionRequest request) {
-        log.debug("REST запрос на создание новой транзакции");
-        try {
-            TransactionAIResponse response = transactionService.createTransaction(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (EntityNotFoundException | OperationNotAllowedException | InvalidDataException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Ошибка при создании транзакции: {}", e.getMessage(), e);
-            throw new BusinessException("Ошибка при создании транзакции", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @GetMapping
+    public ResponseEntity<List<TransactionResponse>> getTransactions(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) String categoryName) {
+        log.debug("REST request to get Transactions with filter: dateFrom={}, dateTo={}, categoryName={}",
+                 dateFrom, dateTo, categoryName);
+        List<TransactionResponse> transactions = transactionService.getTransactions(dateFrom, dateTo, categoryName);
+        return ResponseEntity.ok(transactions);
+    }
+
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TransactionResponse> getTransactionById(@PathVariable Integer id) {
+        log.debug("REST request to get Transaction : {}", id);
+        TransactionResponse transaction = transactionService.getTransactionById(id);
+        return ResponseEntity.ok(transaction);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TransactionResponse> updateTransaction(
-            @PathVariable @Positive(message = "ID должен быть положительным числом") Long id,
-            @RequestBody @Valid TransactionRequest request
-    ) {
-        log.debug("REST запрос на обновление транзакции с ID: {}", id);
-        try {
-            return ResponseEntity.ok(transactionService.updateTransaction(id, request));
-        } catch (EntityNotFoundException | OperationNotAllowedException | InvalidDataException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Ошибка при обновлении транзакции с ID {}: {}", id, e.getMessage(), e);
-            throw new BusinessException("Ошибка при обновлении транзакции", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<TransactionResponse> updateTransaction(@PathVariable Integer id, @Valid @RequestBody TransactionRequest request) {
+        log.debug("REST request to update Transaction : {}", request);
+        TransactionResponse updatedTransaction = transactionService.updateTransaction(id, request);
+        return ResponseEntity.ok(updatedTransaction);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTransaction(
-            @PathVariable @Positive(message = "ID должен быть положительным числом") Long id
-    ) {
-        log.debug("REST запрос на удаление транзакции с ID: {}", id);
-        try {
-            transactionService.deleteTransaction(id);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException | OperationNotAllowedException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Ошибка при удалении транзакции с ID {}: {}", id, e.getMessage(), e);
-            throw new BusinessException("Ошибка при удалении транзакции", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<Void> deleteTransaction(@PathVariable Integer id) {
+        log.debug("REST request to delete Transaction : {}", id);
+        transactionService.deleteTransaction(id);
+        return ResponseEntity.noContent().build();
     }
 
+    // Комментируем или удаляем эндпоинт импорта
+    /*
     @PostMapping("/import")
     public ResponseEntity<ImportResponse> importTransactions(@RequestParam("file") MultipartFile file) {
-        log.debug("REST запрос на импорт транзакций из файла");
-        try {
-            if (file.isEmpty()) {
-                throw new InvalidDataException("Файл не может быть пустым")
-                        .addError("file", "Файл не может быть пустым");
-            }
-            
-            String fileName = file.getOriginalFilename();
-            if (fileName == null || !(fileName.endsWith(".csv") || fileName.endsWith(".xlsx") || fileName.endsWith(".xls"))) {
-                throw new InvalidDataException("Неподдерживаемый формат файла")
-                        .addError("file", "Поддерживаются только файлы CSV, XLS и XLSX");
-            }
-            
-            return ResponseEntity.accepted().body(transactionService.importTransactions(file));
-        } catch (InvalidDataException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Ошибка при импорте транзакций: {}", e.getMessage(), e);
-            throw new BusinessException("Ошибка при импорте транзакций", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        log.debug("REST request to import Transactions from file : {}", file.getOriginalFilename());
+        // Метод в сервисе сейчас заглушка
+        ImportResponse response = transactionService.importTransactions(file);
+        return ResponseEntity.ok(response);
     }
-} 
+    */
+}

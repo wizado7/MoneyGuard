@@ -55,7 +55,7 @@ public class LimitController {
 
     @PutMapping("/{id}")
     public ResponseEntity<LimitResponse> updateLimit(
-            @PathVariable @Positive(message = "ID должен быть положительным числом") Long id,
+            @PathVariable @Positive(message = "ID должен быть положительным числом") Integer id,
             @RequestBody @Valid LimitRequest request) {
         log.debug("REST запрос на обновление лимита с ID: {}", id);
         try {
@@ -70,7 +70,7 @@ public class LimitController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLimit(
-            @PathVariable @Positive(message = "ID должен быть положительным числом") Long id) {
+            @PathVariable @Positive(message = "ID должен быть положительным числом") Integer id) {
         log.debug("REST запрос на удаление лимита с ID: {}", id);
         try {
             limitService.deleteLimit(id);

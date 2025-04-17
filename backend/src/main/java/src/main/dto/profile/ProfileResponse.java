@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import src.main.model.SubscriptionType;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -13,11 +14,11 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProfileResponse {
-    private Long id;
+    private Integer id;
     private String email;
     private String name;
-    private LocalDateTime created_at;
-    private boolean ai_access_enabled;
+    private String profileImage;
+    private boolean aiAccessEnabled;
     private String subscriptionType;
     private LocalDate subscriptionExpiry;
 } 

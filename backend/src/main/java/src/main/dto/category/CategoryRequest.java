@@ -18,9 +18,14 @@ public class CategoryRequest {
     @Size(min = 2, max = 50, message = "Название категории должно содержать от 2 до 50 символов")
     private String name;
     
-    private Long parent_id;
+    private Integer parent_id;
     
     @Size(max = 50, message = "Иконка должна содержать не более 50 символов")
     @Pattern(regexp = "^[a-z\\-]*$", message = "Иконка должна содержать только строчные буквы и дефисы")
     private String icon;
+
+    private Boolean isIncome;
+
+    @Size(max = 7, message = "Цвет должен быть в формате HEX (#RRGGBB)")
+    private String color;
 } 

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,10 @@ public class GoalRequest {
     @NotNull(message = "Целевая сумма должна быть указана")
     @Positive(message = "Целевая сумма должна быть положительной")
     private BigDecimal target_amount;
+    
+    @NotNull(message = "Текущая сумма должна быть указана")
+    @PositiveOrZero(message = "Текущая сумма не может быть отрицательной")
+    private BigDecimal current_amount;
     
     @NotNull(message = "Дата достижения цели должна быть указана")
     @Future(message = "Дата достижения цели должна быть в будущем")

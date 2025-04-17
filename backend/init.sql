@@ -12,14 +12,20 @@ CREATE TABLE IF NOT EXISTS users (
     subscription_expiry DATE
 );
 
--- Таблица категорий
+-- Удаляем старую таблицу, если существует
+DROP TABLE IF EXISTS categories CASCADE;
+
+-- Создаем таблицу без user_id
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     icon VARCHAR(50),
     parent_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
-    UNIQUE (user_id, name)
+    is_income BOOLEAN NOT NULL DEFAULT false,
+    is_system BOOLEAN NOT NULL DEFAULT false, 
+    color VARCHAR(7),
+    icon_name VARCHAR(50),
+    UNIQUE (name)
 );
 
 -- Таблица транзакций
@@ -73,3 +79,27 @@ CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories(user_id);
 CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id);
 CREATE INDEX IF NOT EXISTS idx_limits_user_id ON limits(user_id);
+
+
+UPDATE categories SET is_income = true WHERE name IN ('Зарплата', 'Подарки', 'Инвестиции', 'Подработка');
+
+-- Вставляем категории по умолчанию без user_id
+INSERT INTO categories (name, icon, is_income, is_system, color, icon_name) VALUES
+  ('Продукты', 'shopping_cart', FALSE, TRUE, '#4CAF50', 'shopping_cart'),
+  ('Транспорт', 'directions_car', FALSE, TRUE, '#2196F3', 'directions_car'),
+  ('Развлечения', 'local_play', FALSE, TRUE, '#9C27B0', 'local_play'),
+  ('Здоровье', 'local_hospital', FALSE, TRUE, '#F44336', 'local_hospital'),
+  ('Одежда', 'checkroom', FALSE, TRUE, '#FF9800', 'checkroom'),
+  ('Рестораны', 'restaurant', FALSE, TRUE, '#795548', 'restaurant'),
+  ('Подарки (расход)', 'card_giftcard', FALSE, TRUE, '#E91E63', 'card_giftcard'),
+  ('Счета', 'receipt_long', FALSE, TRUE, '#607D8B', 'receipt_long'),
+  ('Образование', 'school', FALSE, TRUE, '#3F51B5', 'school'),
+  ('Путешествия', 'flight_takeoff', FALSE, TRUE, '#00BCD4', 'flight_takeoff'),
+  ('Дом', 'home', FALSE, TRUE, '#8BC34A', 'home'),
+  ('Другое (расход)', 'help_outline', FALSE, TRUE, '#9E9E9E', 'help_outline'),
+  ('Зарплата', 'account_balance_wallet', TRUE, TRUE, '#FFEB3B', 'account_balance_wallet'),
+  ('Фриланс', 'work', TRUE, TRUE, '#009688', 'work'),
+  ('Подарки (доход)', 'card_giftcard', TRUE, TRUE, '#CDDC39', 'card_giftcard'),
+  ('Инвестиции', 'trending_up', TRUE, TRUE, '#03A9F4', 'trending_up'),
+  ('Другое (доход)', 'help_outline', TRUE, TRUE, '#9E9E9E', 'help_outline')
+ON CONFLICT (name) DO NOTHING; 

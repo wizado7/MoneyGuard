@@ -1,181 +1,144 @@
 package src.main.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import src.main.dto.category.CategoryRequest;
 import src.main.dto.category.CategoryResponse;
+import src.main.exception.BusinessException;
+import src.main.exception.DuplicateResourceException;
 import src.main.model.Category;
-import src.main.model.User;
 import src.main.repository.CategoryRepository;
 import src.main.repository.UserRepository;
-import src.main.exception.EntityNotFoundException;
-import src.main.exception.OperationNotAllowedException;
-import src.main.exception.ConflictException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import src.main.model.Transaction;
-import src.main.repository.TransactionRepository;
-import src.main.model.Limit;
-import src.main.repository.LimitRepository;
-import src.main.exception.InvalidDataException;
-import src.main.exception.BusinessException;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
-    private final UserRepository userRepository;
-    private final TransactionRepository transactionRepository;
-    private final LimitRepository limitRepository;
-    private static final Logger log = LoggerFactory.getLogger(CategoryService.class);
 
-    @Cacheable(value = "categories", key = "#root.target.getCurrentUserEmail()")
     public List<CategoryResponse> getCategories() {
-        User currentUser = getCurrentUser();
-        
-        List<Category> categories = categoryRepository.findByUser(currentUser);
-        
+        log.debug("Получение всех категорий");
+        List<Category> categories = categoryRepository.findAll();
+        log.info("Найдено {} категорий", categories.size());
         return categories.stream()
-                .map(this::mapToCategoryResponse)
+                .map(this::mapCategoryToResponse)
                 .collect(Collectors.toList());
     }
 
-    @CacheEvict(value = "categories", key = "#root.target.getCurrentUserEmail()")
+    public CategoryResponse getCategoryById(Integer id) {
+        log.debug("Получение категории по ID: {}", id);
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Категория с ID " + id + " не найдена"));
+        return mapCategoryToResponse(category);
+    }
+
     public CategoryResponse createCategory(CategoryRequest request) {
-        User currentUser = getCurrentUser();
-        
-        // Проверка родительской категории, если указана и не равна 0
-        Category parentCategory = null;
-        if (request.getParent_id() != null && request.getParent_id() != 0) {
-            parentCategory = categoryRepository.findById(request.getParent_id())
-                    .orElseThrow(() -> new EntityNotFoundException("Родительская категория", request.getParent_id()));
-            
-            // Проверяем, что родительская категория принадлежит текущему пользователю
-            if (!parentCategory.getUser().getId().equals(currentUser.getId())) {
-                throw new OperationNotAllowedException("Родительская категория не принадлежит текущему пользователю");
-            }
+        log.debug("Создание новой категории: {}", request.getName());
+
+        if (categoryRepository.existsByName(request.getName())) {
+            log.warn("Попытка создать категорию с существующим именем: {}", request.getName());
+            throw new DuplicateResourceException("Категория с названием '" + request.getName() + "' уже существует.");
         }
-        
-        // Проверка на длину иконки
-        if (request.getIcon() != null && request.getIcon().length() > 50) {
-            throw new InvalidDataException("Некорректная иконка")
-                    .addError("icon", "Длина иконки не должна превышать 50 символов");
-        }
-        
+
         Category category = Category.builder()
                 .name(request.getName())
                 .icon(request.getIcon())
-                .parent(parentCategory)
-                .user(currentUser)
+                .iconName(request.getIcon())
+                .color(request.getColor())
+                .isIncome(request.getIsIncome() != null && request.getIsIncome())
+                .isSystem(false)
                 .build();
-        
-        try {
-            categoryRepository.save(category);
-            return mapToCategoryResponse(category);
-        } catch (Exception e) {
-            log.error("Ошибка при сохранении категории: {}", e.getMessage(), e);
-            throw new BusinessException("Ошибка при создании категории", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
 
-    @CacheEvict(value = "categories", key = "#root.target.getCurrentUserEmail()")
-    public CategoryResponse updateCategory(Long id, CategoryRequest request) {
-        User currentUser = getCurrentUser();
-        
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Категория не найдена"));
-        
-        // Проверяем, что категория принадлежит текущему пользователю
-        if (!category.getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Доступ запрещен");
-        }
-        
-        Category parentCategory = null;
         if (request.getParent_id() != null) {
-            parentCategory = categoryRepository.findById(request.getParent_id())
-                    .orElseThrow(() -> new RuntimeException("Родительская категория не найдена"));
-            
-            // Проверяем, что родительская категория принадлежит текущему пользователю
-            if (!parentCategory.getUser().getId().equals(currentUser.getId())) {
-                throw new RuntimeException("Доступ запрещен");
-            }
+            Category parent = categoryRepository.findById(request.getParent_id())
+                    .orElseThrow(() -> new EntityNotFoundException("Родительская категория с ID " + request.getParent_id() + " не найдена"));
+            category.setParent(parent);
         }
-        
-        category.setName(request.getName());
-        category.setParent(parentCategory);
-        category.setIcon(request.getIcon());
-        
-        Category updatedCategory = categoryRepository.save(category);
-        
-        return mapToCategoryResponse(updatedCategory);
+
+        Category savedCategory = categoryRepository.save(category);
+        log.info("Категория '{}' (ID: {}) успешно создана", savedCategory.getName(), savedCategory.getId());
+        return mapCategoryToResponse(savedCategory);
     }
 
-    @CacheEvict(value = "categories", key = "#root.target.getCurrentUserEmail()")
-    public void deleteCategory(Long id) {
-        log.debug("Удаление категории с ID: {}", id);
-        User currentUser = getCurrentUser();
-        
+    public CategoryResponse updateCategory(Integer id, CategoryRequest request) {
+        log.debug("Обновление категории с ID: {}", id);
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Категория с ID {} не найдена", id);
-                    return new EntityNotFoundException("Категория", id);
-                });
-        
-        // Проверяем, что категория принадлежит текущему пользователю
-        if (!category.getUser().getId().equals(currentUser.getId())) {
-            log.warn("Попытка удаления чужой категории: {} пользователем: {}", id, currentUser.getEmail());
-            throw OperationNotAllowedException.notOwner("категория");
+                .orElseThrow(() -> new EntityNotFoundException("Категория с ID " + id + " не найдена"));
+
+        if (category.isSystem()) {
+             log.warn("Попытка изменить системную категорию с ID: {}", id);
+             throw new BusinessException("Системные категории не могут быть изменены", HttpStatus.BAD_REQUEST);
         }
-        
-        // Проверяем, есть ли дочерние категории
-        List<Category> childCategories = categoryRepository.findByParentId(id);
-        if (!childCategories.isEmpty()) {
-            log.warn("Попытка удаления категории с дочерними категориями: {}", id);
-            throw ConflictException.dependencyExists("категория", "дочерние категории");
+
+        if (!category.getName().equalsIgnoreCase(request.getName()) && categoryRepository.existsByName(request.getName())) {
+            log.warn("Попытка обновить категорию ID: {}, новое имя '{}' уже существует", id, request.getName());
+            throw new DuplicateResourceException("Категория с названием '" + request.getName() + "' уже существует.");
         }
-        
-        // Проверяем, есть ли связанные транзакции
-        List<Transaction> transactions = transactionRepository.findByUserAndCategoryIdOrderByDateDesc(currentUser, id);
-        if (!transactions.isEmpty()) {
-            log.warn("Попытка удаления категории с связанными транзакциями: {}", id);
-            throw ConflictException.dependencyExists("категория", "транзакции");
+
+        category.setName(request.getName());
+        category.setIcon(request.getIcon());
+        category.setIconName(request.getIcon());
+        category.setColor(request.getColor());
+        category.setIncome(request.getIsIncome() != null && request.getIsIncome());
+
+        Integer requestedParentId = request.getParent_id();
+        Integer currentParentId = category.getParent() != null ? category.getParent().getId() : null;
+
+        if (requestedParentId != null) {
+            if (!requestedParentId.equals(currentParentId)) {
+                 Category parent = categoryRepository.findById(requestedParentId)
+                    .orElseThrow(() -> new EntityNotFoundException("Родительская категория с ID " + requestedParentId + " не найдена"));
+                 if (parent.getId().equals(category.getId())) {
+                     throw new BusinessException("Категория не может быть родителем самой себе", HttpStatus.BAD_REQUEST);
+                 }
+                 category.setParent(parent);
+            }
+        } else if (currentParentId != null) {
+            category.setParent(null);
         }
-        
-        // Проверяем, есть ли связанные лимиты
-        List<Limit> limits = limitRepository.findByUserAndCategoryId(currentUser, id);
-        if (!limits.isEmpty()) {
-            log.warn("Попытка удаления категории с связанными лимитами: {}", id);
-            throw ConflictException.dependencyExists("категория", "лимиты");
-        }
-        
-        categoryRepository.delete(category);
-        log.info("Категория успешно удалена: {} для пользователя: {}", category.getName(), currentUser.getEmail());
+
+        Category updatedCategory = categoryRepository.save(category);
+        log.info("Категория с ID {} успешно обновлена", id);
+        return mapCategoryToResponse(updatedCategory);
     }
 
-    private CategoryResponse mapToCategoryResponse(Category category) {
+    public void deleteCategory(Integer id) {
+        log.debug("Удаление категории с ID: {}", id);
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Категория с ID " + id + " не найдена"));
+
+        if (category.isSystem()) {
+             log.warn("Попытка удалить системную категорию с ID: {}", id);
+             throw new BusinessException("Системные категории не могут быть удалены", HttpStatus.BAD_REQUEST);
+         }
+
+        if (!categoryRepository.findByParentId(id).isEmpty()) {
+            log.warn("Попытка удалить категорию ID: {} с дочерними категориями", id);
+            throw new BusinessException("Нельзя удалить категорию, у которой есть дочерние категории", HttpStatus.CONFLICT);
+        }
+
+        categoryRepository.delete(category);
+        log.info("Категория с ID {} успешно удалена", id);
+    }
+
+    private CategoryResponse mapCategoryToResponse(Category category) {
+        if (category == null) {
+            return null;
+        }
         return CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())
-                .parentId(category.getParent() != null ? category.getParent().getId() : null)
                 .icon(category.getIcon())
+                .parentId(category.getParent() != null ? category.getParent().getId() : null)
+                .isIncome(category.isIncome())
+                .color(category.getColor())
                 .build();
     }
-
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-    }
-
-    public String getCurrentUserEmail() {
-        return SecurityContextHolder.getContext().getAuthentication().getName();
-    }
-} 
+}
