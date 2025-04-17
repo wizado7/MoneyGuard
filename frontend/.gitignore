@@ -1,0 +1,91 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# --- Flutter / Dart ---
+/build/
+/.dart_tool/
+/.flutter-plugins
+/.flutter-plugins-dependencies
+/.packages
+/.pub-cache/
+/.pub/
+
+# --- Сгенерированные файлы ---
+lib/**/*.g.dart
+lib/**/*.freezed.dart
+
+# --- Файлы окружения ---
+.env
+
+# --- IDE ---
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+
+# --- Локальные настройки Android ---
+/android/local.properties
+
+# --- Локальные настройки iOS/macOS ---
+/ios/Runner.xcworkspace/xcshareddata/
+/ios/Runner.xcodeproj/project.xcworkspace/
+/ios/Runner.xcodeproj/xcuserdata/
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/App.framework
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/ios/Flutter/podhelper.rb
+/ios/Flutter/.last_build_id
+/ios/Runner/GeneratedPluginRegistrant.*
+
+# --- Прочее ---
+*.log
+*~
+*.swp
+.DS_Store
+Thumbs.db
+
+app.*.symbols
+app.*.map.json

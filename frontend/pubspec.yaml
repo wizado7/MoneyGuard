@@ -1,0 +1,64 @@
+name: moneyguard
+description: "Финансовый ассистент для управления личными финансами"
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+# Dependencies specify other packages that your package needs in order to work.
+dependencies:
+  flutter:
+    sdk: flutter
+  image_picker: ^1.0.4
+  cupertino_icons: ^1.0.2
+  http: ^1.1.0
+  shared_preferences: ^2.2.2
+  provider: ^6.1.4
+  intl: ^0.18.1
+  flutter_secure_storage: ^9.2.4
+  json_annotation: ^4.9.0
+  dio: ^5.8.0+1
+  flutter_dotenv: ^5.1.0
+  focus_detector: ^2.0.1
+  connectivity_plus: ^4.0.2
+  smooth_page_indicator: ^1.1.0
+  google_fonts: ^6.1.0  
+  build_runner: ^2.4.15
+  json_serializable: ^6.9.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+# The following section is specific to Flutter packages.
+flutter:
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - .env
+    - assets/images/
+
+  # To add custom fonts to your application, add a fonts section here.
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+  # Example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
