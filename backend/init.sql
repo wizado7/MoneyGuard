@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Удаляем старую таблицу, если существует
 DROP TABLE IF EXISTS categories CASCADE;
 
--- Создаем таблицу без user_id
+-- Таблица категорий
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -28,18 +28,6 @@ CREATE TABLE IF NOT EXISTS categories (
     UNIQUE (name)
 );
 
--- Таблица транзакций
-CREATE TABLE IF NOT EXISTS transactions (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-    goal_id INTEGER REFERENCES goals(id) ON DELETE SET NULL,
-    amount DECIMAL(15, 2) NOT NULL,
-    date DATE NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Таблица целей
 CREATE TABLE IF NOT EXISTS goals (
     id SERIAL PRIMARY KEY,
@@ -50,6 +38,18 @@ CREATE TABLE IF NOT EXISTS goals (
     current_amount DECIMAL(15, 2) NOT NULL DEFAULT 0,
     target_date DATE NOT NULL,
     priority VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица транзакций (после users, categories и goals)
+CREATE TABLE IF NOT EXISTS transactions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    goal_id INTEGER REFERENCES goals(id) ON DELETE SET NULL,
+    amount DECIMAL(15, 2) NOT NULL,
+    date DATE NOT NULL,
+    description TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -72,18 +72,14 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     UNIQUE (user_id)
 );
 
--- Создание индексов для оптимизации запросов
+-- Индексы
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
-CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories(user_id);
 CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id);
 CREATE INDEX IF NOT EXISTS idx_limits_user_id ON limits(user_id);
 
-
-UPDATE categories SET is_income = true WHERE name IN ('Зарплата', 'Подарки', 'Инвестиции', 'Подработка');
-
--- Вставляем категории по умолчанию без user_id
+-- Вставка категорий по умолчанию
 INSERT INTO categories (name, icon, is_income, is_system, color, icon_name) VALUES
   ('Продукты', 'shopping_cart', FALSE, TRUE, '#4CAF50', 'shopping_cart'),
   ('Транспорт', 'directions_car', FALSE, TRUE, '#2196F3', 'directions_car'),
@@ -102,4 +98,7 @@ INSERT INTO categories (name, icon, is_income, is_system, color, icon_name) VALU
   ('Подарки (доход)', 'card_giftcard', TRUE, TRUE, '#CDDC39', 'card_giftcard'),
   ('Инвестиции', 'trending_up', TRUE, TRUE, '#03A9F4', 'trending_up'),
   ('Другое (доход)', 'help_outline', TRUE, TRUE, '#9E9E9E', 'help_outline')
-ON CONFLICT (name) DO NOTHING; 
+ON CONFLICT (name) DO NOTHING;
+
+-- Обновление категорий
+UPDATE categories SET is_income = true WHERE name IN ('Зарплата', 'Подарки', 'Инвестиции', 'Подработка');

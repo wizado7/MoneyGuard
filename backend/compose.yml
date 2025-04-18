@@ -7,8 +7,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -34,6 +36,11 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USERNAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - moneyguard-network
 
@@ -44,6 +51,11 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
       - moneyguard-network
 
@@ -53,4 +65,4 @@ networks:
 
 volumes:
   postgres-data:
-  redis-data: 
+  redis-data:
