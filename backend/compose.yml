@@ -4,8 +4,11 @@ services:
   app:
     build: .
     container_name: moneyguard-backend
+    restart: always
     ports:
       - "45678:8080"
+    security_opt:
+      - apparmor=unconfined
     depends_on:
       postgres:
         condition: service_healthy
@@ -27,8 +30,11 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: moneyguard-postgres
+    restart: always
     ports:
       - "5432:5432"
+    security_opt:
+      - apparmor=unconfined
     environment:
       - POSTGRES_DB=moneyguard
       - POSTGRES_USER=${DB_USERNAME}
@@ -47,8 +53,11 @@ services:
   redis:
     image: redis:7-alpine
     container_name: moneyguard-redis
+    restart: always
     ports:
       - "6379:6379"
+    security_opt:
+      - apparmor=unconfined
     volumes:
       - redis-data:/data
     healthcheck:
