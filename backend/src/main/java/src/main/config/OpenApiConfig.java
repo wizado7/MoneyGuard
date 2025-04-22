@@ -44,7 +44,7 @@ public class OpenApiConfig {
                                     .url("http://localhost:8080" + contextPath)
                                     .description("Local Development Server"),
                             new Server()
-                                    .url("https://api.moneyguard.ru" + contextPath)
+                                    .url("https://moneyguard.asuscomm.com" + contextPath)
                                     .description("Production Server")))
                     .components(new Components()
                             .addSecuritySchemes("bearerAuth", new SecurityScheme()
