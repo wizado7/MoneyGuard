@@ -11,7 +11,6 @@ public class CategoryDTO {
     @NotBlank(message = "Название категории не может быть пустым")
     private String name;
 
-    // Поля необязательны
     private String iconName;
     private String colorHex;
 
@@ -19,5 +18,5 @@ public class CategoryDTO {
     private Boolean isIncome;
 
     private Integer parentId;
-    private String userId; // Может быть null для общих категорий
+    private String userId; 
 } 

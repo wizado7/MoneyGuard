@@ -17,5 +17,5 @@ public class SubscriptionRequest {
     @Pattern(regexp = "FREE|PREMIUM", message = "Тип подписки должен быть одним из: FREE, PREMIUM")
     private String type;
     
-    private String payment_token;
+    private String paymentToken;
 } 

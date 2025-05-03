@@ -85,7 +85,7 @@ public class GoalService {
                 .name(goalRequest.getName())
                 .description(null)
                 .targetAmount(goalRequest.getTarget_amount())
-                .currentAmount(BigDecimal.ZERO)
+                .currentAmount(goalRequest.getCurrent_amount())
                 .targetDate(goalRequest.getTarget_date())
                 .priority(priority)
                 .createdAt(LocalDateTime.now())

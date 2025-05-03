@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   app:
     build: .
     container_name: moneyguard-backend
     restart: always
     ports:
-      - "45678:8080"
+      - "8080:8080"
     security_opt:
       - apparmor=unconfined
     depends_on:
@@ -17,6 +15,8 @@ services:
     env_file:
       - .env
     environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SERVER_PORT=${SERVER_PORT}
       - SPRING_DATASOURCE_URL=${DB_URL}
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}

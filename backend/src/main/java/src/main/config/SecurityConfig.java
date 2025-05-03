@@ -16,6 +16,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import src.main.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.context.annotation.Profile;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,16 +26,24 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@Profile("!prod")
 @RequiredArgsConstructor
 @Slf4j
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
+    private final Environment env;
+
+    @Value("${springdoc.api-docs.path}")
+    private String restApiDocPath;
+
+    @Value("${springdoc.swagger-ui.path}")
+    private String swaggerPath;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        log.debug("Configuring SecurityFilterChain");
+    public SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
+        log.debug("Configuring SecurityFilterChain for 'dev' profile");
         try {
             http
                     .csrf(AbstractHttpConfigurer::disable)
@@ -51,10 +62,34 @@ public class SecurityConfig {
                     .authenticationProvider(authenticationProvider)
                     .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
             
-            log.debug("SecurityFilterChain configured successfully");
+            log.debug("SecurityFilterChain for 'dev' profile configured successfully");
             return http.build();
         } catch (Exception e) {
-            log.error("Error configuring SecurityFilterChain: {}", e.getMessage(), e);
+            log.error("Error configuring SecurityFilterChain for 'dev' profile: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @Bean
+    @Profile("prod")
+    public SecurityFilterChain prodSecurityFilterChain(HttpSecurity http) throws Exception {
+        log.debug("Configuring SecurityFilterChain for 'prod' profile");
+        try {
+            http
+                    .csrf(AbstractHttpConfigurer::disable)
+                    .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                    .authorizeHttpRequests(auth -> auth
+                            .requestMatchers("/auth/**").permitAll()
+                            .anyRequest().authenticated()
+                    )
+                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .authenticationProvider(authenticationProvider)
+                    .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            
+            log.debug("SecurityFilterChain for 'prod' profile configured successfully");
+            return http.build();
+        } catch (Exception e) {
+            log.error("Error configuring SecurityFilterChain for 'prod' profile: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -63,7 +98,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         log.debug("Configuring CORS");
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://moneyguard.asuscomm.com"));
+        if (Arrays.asList(env.getActiveProfiles()).contains("dev")) {
+            configuration.setAllowedOrigins(List.of("http://localhost:8080"));
+        } else {
+            configuration.setAllowedOrigins(List.of("https://moneyguard.asuscomm.com"));
+        }
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));

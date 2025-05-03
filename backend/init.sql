@@ -1,6 +1,3 @@
--- Создание таблиц для базы данных MoneyGuard
-
--- Таблица пользователей
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -12,10 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
     subscription_expiry DATE
 );
 
--- Удаляем старую таблицу, если существует
 DROP TABLE IF EXISTS categories CASCADE;
 
--- Таблица категорий
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -28,7 +23,6 @@ CREATE TABLE IF NOT EXISTS categories (
     UNIQUE (name)
 );
 
--- Таблица целей
 CREATE TABLE IF NOT EXISTS goals (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -41,7 +35,6 @@ CREATE TABLE IF NOT EXISTS goals (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Таблица транзакций (после users, categories и goals)
 CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -53,7 +46,6 @@ CREATE TABLE IF NOT EXISTS transactions (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Таблица лимитов
 CREATE TABLE IF NOT EXISTS limits (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -63,7 +55,6 @@ CREATE TABLE IF NOT EXISTS limits (
     UNIQUE (user_id, category_id)
 );
 
--- Таблица подписок
 CREATE TABLE IF NOT EXISTS subscriptions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -72,14 +63,12 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     UNIQUE (user_id)
 );
 
--- Индексы
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id);
 CREATE INDEX IF NOT EXISTS idx_limits_user_id ON limits(user_id);
 
--- Вставка категорий по умолчанию
 INSERT INTO categories (name, icon, is_income, is_system, color, icon_name) VALUES
   ('Продукты', 'shopping_cart', FALSE, TRUE, '#4CAF50', 'shopping_cart'),
   ('Транспорт', 'directions_car', FALSE, TRUE, '#2196F3', 'directions_car'),
@@ -100,5 +89,4 @@ INSERT INTO categories (name, icon, is_income, is_system, color, icon_name) VALU
   ('Другое (доход)', 'help_outline', TRUE, TRUE, '#9E9E9E', 'help_outline')
 ON CONFLICT (name) DO NOTHING;
 
--- Обновление категорий
 UPDATE categories SET is_income = true WHERE name IN ('Зарплата', 'Подарки', 'Инвестиции', 'Подработка');
