@@ -42,6 +42,18 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   void initState() {
     super.initState();
     
+    // Отладочная информация
+    print("TransactionDetailScreen: Transaction data received:");
+    print("ID: ${widget.transaction.id}");
+    print("Amount: ${widget.transaction.amount}");
+    print("CategoryID: ${widget.transaction.categoryId}");
+    print("CategoryName: ${widget.transaction.categoryName}");
+    print("Date: ${widget.transaction.date}");
+    print("GoalID: ${widget.transaction.goalId}");
+    print("AmountContributedToGoal: ${widget.transaction.amountContributedToGoal}");
+    print("UserID: ${widget.transaction.userId}");
+    print("CreatedAt: ${widget.transaction.createdAt}");
+    
     _amountController = TextEditingController(
       text: widget.transaction.amount.abs().toStringAsFixed(2)
     );
@@ -55,8 +67,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     
     // Инициализируем контроллер для суммы цели
     _amountToGoalController = TextEditingController();
-    if (widget.transaction.amountToGoal != null) {
-      _amountToGoalController.text = widget.transaction.amountToGoal!.toStringAsFixed(2);
+    // Принудительно устанавливаем значение из API
+    if (widget.transaction.amountContributedToGoal != null) {
+      print("Setting amountToGoalController to: ${widget.transaction.amountContributedToGoal}");
+      _amountToGoalController.text = widget.transaction.amountContributedToGoal!.toStringAsFixed(2);
+    } else {
+      print("No amountContributedToGoal found, using transaction amount: ${widget.transaction.amount.abs()}");
+      _amountToGoalController.text = widget.transaction.amount.abs().toStringAsFixed(2);
     }
     
     // Обновляем видимость поля суммы для цели
@@ -97,31 +114,29 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   void _updateAmountToGoalVisibility({bool initialize = false}) {
     final shouldShow = !_isExpense && _selectedGoalId != null;
 
-    if (initialize && widget.transaction.isIncome && widget.transaction.goalId != null) {
-       final initialAmount = widget.transaction.amountToGoal ?? widget.transaction.amount.abs();
-       _amountToGoalController.text = initialAmount.toStringAsFixed(2);
-    } else if (shouldShow && _amountController.text.isNotEmpty) {
-       _amountToGoalController.text = _amountController.text;
-    } else if (!shouldShow) {
-       _amountToGoalController.clear();
+    print("_updateAmountToGoalVisibility: initialize=$initialize, shouldShow=$shouldShow");
+    print("_isExpense=$_isExpense, _selectedGoalId=$_selectedGoalId");
+    print("Current amountToGoalController.text=${_amountToGoalController.text}");
+
+    if (!shouldShow) {
+      print("Clearing amountToGoalController");
+      _amountToGoalController.clear();
     }
 
     if (_showAmountToGoalField != shouldShow) {
-       setState(() {
-         _showAmountToGoalField = shouldShow;
-       });
+      print("Updating _showAmountToGoalField from ${_showAmountToGoalField} to $shouldShow");
+      setState(() {
+        _showAmountToGoalField = shouldShow;
+      });
     } else if (initialize) {
-       _showAmountToGoalField = shouldShow;
+      print("Setting _showAmountToGoalField to $shouldShow (initialize)");
+      _showAmountToGoalField = shouldShow;
     }
   }
 
-   void _onAmountChanged(String value) {
-      if (_showAmountToGoalField) {
-         setState(() {
-            _amountToGoalController.text = value;
-         });
-      }
-   }
+  void _onAmountChanged(String value) {
+    // Удаляем автоматическую синхронизацию
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     if (!_isEditing) return;
@@ -132,8 +147,30 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       lastDate: DateTime(2101),
     );
     if (picked != null && picked != _selectedDate) {
+      final TimeOfDay? time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDate),
+      );
+      
       setState(() {
-        _selectedDate = picked;
+        if (time != null) {
+          _selectedDate = DateTime(
+            picked.year,
+            picked.month,
+            picked.day,
+            time.hour,
+            time.minute,
+          );
+        } else {
+          _selectedDate = DateTime(
+            picked.year,
+            picked.month,
+            picked.day,
+            _selectedDate.hour,
+            _selectedDate.minute,
+            _selectedDate.second,
+          );
+        }
       });
     }
   }
@@ -153,6 +190,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       double? amountToGoal;
       if (_showAmountToGoalField && _amountToGoalController.text.isNotEmpty) {
         amountToGoal = double.parse(_amountToGoalController.text.replaceAll(',', '.'));
+        
+        print("Saving transaction with amountToGoal: $amountToGoal");
         
         // Проверяем, что сумма для цели не превышает сумму дохода
         if (amountToGoal > amount) {
@@ -175,10 +214,17 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         date: _selectedDate,
         description: _descriptionController.text,
         goalId: _selectedGoalId,
-        amountToGoal: amountToGoal,
+        amountContributedToGoal: amountToGoal,
         userId: widget.transaction.userId,
         createdAt: widget.transaction.createdAt,
       );
+
+      print("Sending updated transaction to API:");
+      print("ID: ${updatedTransaction.id}");
+      print("Amount: ${updatedTransaction.amount}");
+      print("CategoryID: ${updatedTransaction.categoryId}");
+      print("GoalID: ${updatedTransaction.goalId}");
+      print("AmountContributedToGoal: ${updatedTransaction.amountContributedToGoal}");
 
       // Вызываем провайдер для обновления транзакции
       final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
@@ -296,7 +342,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   _selectedDate = widget.transaction.date;
                   _selectedCategoryId = widget.transaction.categoryId;
                   _selectedGoalId = widget.transaction.goalId;
-                  _amountToGoalController.text = widget.transaction.amountToGoal?.toStringAsFixed(2) ?? '';
+                  _amountToGoalController.text = widget.transaction.amountContributedToGoal?.toStringAsFixed(2) ?? '';
                   _updateAmountToGoalVisibility(initialize: true);
                 });
               },
@@ -460,7 +506,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             ),
             _selectedGoalId != null ? SizedBox(height: 16) : SizedBox.shrink(),
 
-            if (_isEditing && _showAmountToGoalField)
+            if (_isEditing && !_isExpense && _selectedGoalId != null && widget.transaction.amountContributedToGoal != null)
               _buildDetailRow(
                 label: 'Сумма для цели',
                 child: TextFormField(
@@ -488,7 +534,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   },
                 ),
               ),
-            _isEditing && _showAmountToGoalField ? SizedBox(height: 16) : SizedBox.shrink(),
+            if (_isEditing && !_isExpense && _selectedGoalId != null) SizedBox(height: 16),
 
             _buildDetailRow(
               label: 'Дата',
@@ -499,7 +545,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     Icon(Icons.calendar_today_outlined, size: 16, color: AppTheme.secondaryTextColor),
                     SizedBox(width: 8),
                     Text(
-                      DateFormat('dd MMMM yyyy', 'ru').format(_selectedDate),
+                      DateFormat('dd MMMM yyyy HH:mm', 'ru').format(_selectedDate),
                       style: TextStyle(color: AppTheme.textColor, fontSize: 16),
                     ),
                     if (_isEditing) Icon(Icons.arrow_drop_down, color: AppTheme.secondaryTextColor),

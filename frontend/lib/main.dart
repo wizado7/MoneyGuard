@@ -13,7 +13,6 @@ import 'package:moneyguard/presentation/screens/splash_screen.dart';
 import 'package:moneyguard/presentation/screens/welcome_screen.dart';
 import 'package:moneyguard/presentation/screens/main_navigation_screen.dart';
 import 'package:moneyguard/presentation/theme/app_theme.dart';
-// Импортируем остальные экраны для routes
 import 'package:moneyguard/presentation/screens/login_screen.dart';
 import 'package:moneyguard/presentation/screens/register_screen.dart';
 import 'package:moneyguard/presentation/screens/profile_screen.dart';
@@ -55,7 +54,7 @@ class MyApp extends StatelessWidget {
         // AuthProvider должен быть первым, т.к. другие могут от него зависеть
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         // Используем ChangeNotifierProxyProvider для провайдеров,
-        // которым нужен AuthProvider (например, для токена или статуса аутентификации)
+        // которым нужен AuthProvider
         // Хотя ApiService сам добавляет токен, провайдерам может быть нужен статус auth.isAuthenticated
         ChangeNotifierProxyProvider<AuthProvider, CategoryProvider>(
            create: (_) => CategoryProvider(),
@@ -80,34 +79,33 @@ class MyApp extends StatelessWidget {
         // Эти провайдеры могут не зависеть напрямую от AuthProvider, но все равно используем Proxy для единообразия
          ChangeNotifierProxyProvider<AuthProvider, AIChatProvider>(
            create: (_) => AIChatProvider(),
-           update: (_, auth, previous) => (previous ?? AIChatProvider()), // .updateAuth(auth) если нужно
+           update: (_, auth, previous) => (previous ?? AIChatProvider()), 
         ),
          ChangeNotifierProxyProvider<AuthProvider, StatisticsProvider>(
            create: (_) => StatisticsProvider(),
-           update: (_, auth, previous) => (previous ?? StatisticsProvider()), // .updateAuth(auth) если нужно
+           update: (_, auth, previous) => (previous ?? StatisticsProvider()), 
         ),
       ],
       child: MaterialApp(
         title: 'MoneyGuard',
-        theme: AppTheme.darkTheme, // Используем вашу темную тему
+        theme: AppTheme.darkTheme,
         debugShowCheckedModeBanner: false,
-        navigatorObservers: [ _KeyboardDismissNavigatorObserver() ], // Оставляем ваш обсервер
+        navigatorObservers: [ _KeyboardDismissNavigatorObserver() ],
         home: Consumer<AuthProvider>(
           builder: (ctx, auth, _) {
             print("MyApp Consumer: isLoading=${auth.isLoading}, isAuthenticated=${auth.isAuthenticated}");
             if (auth.isLoading) {
-              return const SplashScreen(); // Показываем сплэш во время проверки авто-входа
+              return const SplashScreen();
             } else if (auth.isAuthenticated) {
-              return const MainNavigationScreen(); // Если аутентифицирован
+              return const MainNavigationScreen();
             } else {
-              return const WelcomeScreen(); // Если не аутентифицирован
+              return const WelcomeScreen();
             }
           },
         ),
-        // Определяем маршруты для навигации по имени
         routes: {
           '/welcome': (context) => const WelcomeScreen(),
-          '/home': (context) => const MainNavigationScreen(), // Главный экран после логина
+          '/home': (context) => const MainNavigationScreen(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/profile': (context) => const ProfileScreen(),
@@ -118,61 +116,11 @@ class MyApp extends StatelessWidget {
           '/limits': (context) => const LimitsScreen(),
           '/statistics': (context) => const StatisticsScreen(),
           '/change_password': (context) => const ChangePasswordScreen(),
-          // Добавьте другие маршруты при необходимости
         },
       ),
     );
   }
 }
-
-// Вспомогательный класс для провайдеров, зависящих от AuthProvider
-// Добавьте метод updateAuth в ваши провайдеры (CategoryProvider, TransactionProvider и т.д.)
-/* Пример для CategoryProvider:
-class CategoryProvider with ChangeNotifier {
-  final ApiService _apiService = ApiService();
-  AuthProvider? _authProvider; // Храним ссылку на AuthProvider
-  List<Category> _categories = [];
-  bool _isLoading = false;
-  String? _error;
-
-  List<Category> get categories => _categories;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-
-  // Метод для обновления ссылки на AuthProvider
-  void updateAuth(AuthProvider auth) {
-    _authProvider = auth;
-    // Если пользователь аутентифицирован и категории еще не загружены, загружаем их
-    if (auth.isAuthenticated && _categories.isEmpty) {
-       fetchCategories();
-    } else if (!auth.isAuthenticated) {
-       // Если пользователь разлогинился, очищаем данные
-       _categories = [];
-       _error = null;
-       notifyListeners();
-    }
-  }
-
-  Future<void> fetchCategories() async {
-    if (_authProvider == null || !_authProvider!.isAuthenticated) {
-       _error = "Пользователь не аутентифицирован";
-       notifyListeners();
-       return;
-    }
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
-      _categories = await _apiService.getCategories();
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-}
-*/
 
 // Наблюдатель для скрытия клавиатуры (оставляем как есть)
 class _KeyboardDismissNavigatorObserver extends NavigatorObserver {

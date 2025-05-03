@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 
 part 'transaction.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class Transaction {
   final int? id;
   
@@ -16,19 +16,20 @@ class Transaction {
   final double amount;
   final String? description;
   
-  @JsonKey(fromJson: _dateFromJson)
+  @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
   final DateTime date;
   
   @JsonKey(name: 'goalId')
   final int? goalId;
   
   @JsonKey(name: 'userId')
-  String? userId;
+  final String userId;
   
-  @JsonKey(fromJson: _dateTimeFromJson)
+  @JsonKey(name: 'createdAt', fromJson: _dateTimeFromJson, toJson: _dateTimeToJson)
   final DateTime? createdAt;
 
-  double? amountToGoal;
+  @JsonKey(name: 'amount_to_goal')
+  double? amountContributedToGoal;
 
   Transaction({
     this.id,
@@ -38,10 +39,9 @@ class Transaction {
     this.description,
     required this.date,
     this.goalId,
-    this.userId,
+    required this.userId,
     this.createdAt,
-    this.amountToGoal,
-    bool isIncome = false,
+    this.amountContributedToGoal,
   });
 
   // Статический метод для преобразования строки в DateTime
@@ -49,19 +49,21 @@ class Transaction {
     if (date is DateTime) return date;
     if (date is String) {
       try {
-        // Пробуем разные форматы даты
+        // Если дата содержит время (формат ISO 8601)
         if (date.contains('T')) {
           return DateTime.parse(date);
         } else {
-          // Если дата в формате YYYY-MM-DD
-          final parts = date.split('-');
-          if (parts.length == 3) {
-            return DateTime(
-              int.parse(parts[0]), 
-              int.parse(parts[1]), 
-              int.parse(parts[2])
-            );
-          }
+          // Если дата в формате YYYY-MM-DD, добавляем время из createdAt
+          final now = DateTime.now();
+          final parsedDate = DateTime.parse(date);
+          return DateTime(
+            parsedDate.year,
+            parsedDate.month,
+            parsedDate.day,
+            now.hour,
+            now.minute,
+            now.second,
+          );
         }
       } catch (e) {
         print('Ошибка при парсинге даты: $e');
@@ -70,9 +72,9 @@ class Transaction {
     return DateTime.now(); // Возвращаем текущую дату в случае ошибки
   }
   
-  // Статический метод для преобразования строки в DateTime?
-  static DateTime? _dateTimeFromJson(dynamic date) {
-    if (date == null) return null;
+  // Статический метод для преобразования строки в DateTime
+  static DateTime _dateTimeFromJson(dynamic date) {
+    if (date == null) return DateTime.now(); // Возвращаем текущую дату, если null
     if (date is DateTime) return date;
     if (date is String) {
       try {
@@ -81,13 +83,16 @@ class Transaction {
         print('Ошибка при парсинге даты createdAt: $e');
       }
     }
-    return null;
+    return DateTime.now(); // Возвращаем текущую дату в случае ошибки
   }
   
   // Метод для сериализации даты в строку
-  @JsonKey(toJson: _dateToJson)
   static String _dateToJson(DateTime date) {
-    return date.toIso8601String().split('T')[0]; // Возвращаем только дату без времени
+    return DateFormat('yyyy-MM-dd').format(date); // Возвращаем полную дату с временем
+  }
+
+  static String? _dateTimeToJson(DateTime? dateTime) {
+    return dateTime?.toIso8601String();
   }
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
@@ -99,10 +104,18 @@ class Transaction {
         parsedUserId = json['user_id'].toString();
       }
 
-      var transaction = _$TransactionFromJson(json);
-      transaction.userId = parsedUserId;
-      transaction.amountToGoal = (json['amount_contributed_to_goal'] as num?)?.toDouble();
-      return transaction;
+      return Transaction(
+        id: json['id'] is int ? json['id'] : 0,
+        categoryId: json['categoryId'] is int ? json['categoryId'] : 0,
+        categoryName: json['category'] as String?,
+        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+        description: json['description'] as String?,
+        date: _dateFromJson(json['date']),
+        goalId: json['goalId'] ?? json['goal_id'],
+        userId: parsedUserId ?? '',
+        createdAt: _dateTimeFromJson(json['createdAt']),
+        amountContributedToGoal: (json['amountContributedToGoal'] ?? json['amount_contributed_to_goal'] as num?)?.toDouble(),
+      );
     } catch (e) {
       print('Ошибка при десериализации Transaction: $e');
       // Возвращаем базовую транзакцию в случае ошибки
@@ -120,9 +133,9 @@ class Transaction {
         date: _dateFromJson(json['date']),
         description: json['description'] is String ? json['description'] : '',
         goalId: json['goalId'] ?? json['goal_id'],
-        userId: userId,
-        createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-        amountToGoal: (json['amount_contributed_to_goal'] as num?)?.toDouble(),
+        userId: userId ?? '',
+        createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+        amountContributedToGoal: (json['amountContributedToGoal'] ?? json['amount_contributed_to_goal'] as num?)?.toDouble(),
       );
     }
   }
@@ -130,14 +143,10 @@ class Transaction {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = _$TransactionToJson(this);
     
-    // Преобразуем дату в формат YYYY-MM-DD без времени
-    if (date != null) {
-      data['date'] = DateFormat('yyyy-MM-dd').format(date);
-    }
-    
-    // Добавляем amountToGoal, если он задан
-    if (amountToGoal != null) {
-      data['amount_to_goal'] = amountToGoal;  // Используем snake_case для API
+    // Явно указываем поле amountContributedToGoal
+    if (amountContributedToGoal != null) {
+      // Используем оба варианта имени поля для надежности
+      data['amount_to_goal'] = amountContributedToGoal;
     }
     
     return data;

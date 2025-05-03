@@ -78,8 +78,19 @@ class GoalProvider with ChangeNotifier {
     notifyListeners();
     try {
       print("GoalProvider: Adding goal: ${goal.name}");
-      final newGoal = await _apiService.createGoal(goal);
-      _goals.add(newGoal);
+      
+      // Создаем новую цель с начальным значением currentAmount
+      final newGoal = Goal(
+        name: goal.name,
+        targetAmount: goal.targetAmount,
+        currentAmount: goal.currentAmount ?? 0, // Если null, то 0
+        targetDate: goal.targetDate,
+        priority: goal.priority,
+        progress: 0,
+      );
+      
+      final createdGoal = await _apiService.createGoal(newGoal);
+      _goals.add(createdGoal);
       print("GoalProvider: Goal added successfully.");
       _isLoading = false;
       notifyListeners();

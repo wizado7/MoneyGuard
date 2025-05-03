@@ -149,6 +149,38 @@ class ApiService {
       error: true,
       logPrint: (o) => print(o.toString()),
     ));
+
+    _setupInterceptors();
+  }
+
+  void _setupInterceptors() {
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        // Форматирование дат в теле запроса
+        if (options.data is Map) {
+          _formatDatesInMap(options.data);
+        }
+        return handler.next(options);
+      },
+    ));
+  }
+
+  void _formatDatesInMap(Map<String, dynamic> data) {
+    data.forEach((key, value) {
+      if (value is DateTime) {
+        data[key] = DateFormat('yyyy-MM-dd').format(value);
+      } else if (value is Map) {
+        _formatDatesInMap(value as Map<String, dynamic>);
+      } else if (value is List) {
+        for (var i = 0; i < value.length; i++) {
+          if (value[i] is DateTime) {
+            value[i] = DateFormat('yyyy-MM-dd').format(value[i]);
+          } else if (value[i] is Map) {
+            _formatDatesInMap(value[i] as Map<String, dynamic>);
+          }
+        }
+      }
+    });
   }
 
   Future<AuthResponse> register(String email, String password, String name) async {
@@ -255,12 +287,15 @@ class ApiService {
     try {
       print('ApiService: Calling GET /goals');
       final response = await _dio.get('/goals');
-      print('ApiService: Goals response: ${response.data}');
+      print('ApiService: GET /goals response: ${response.data}');
       
-      final List<dynamic> data = response.data;
-      return data.map((item) => Goal.fromJson(item)).toList();
+      if (response.data is List) {
+        return (response.data as List).map((json) => Goal.fromJson(json)).toList();
+      } else {
+        return [];
+      }
     } catch (e) {
-      print('ApiService: Error getting goals: $e');
+      print('ApiService: Error fetching goals: $e');
       throw _handleError(e);
     }
   }
@@ -272,7 +307,10 @@ class ApiService {
         'target_amount': goal.targetAmount,
       };
 
-      
+      if (goal.currentAmount != null && goal.currentAmount > 0) {
+        data['current_amount'] = goal.currentAmount;
+      }
+
       if (goal.targetDate != null) {
         data['target_date'] = DateFormat('yyyy-MM-dd').format(goal.targetDate!);
       }
@@ -436,25 +474,46 @@ class ApiService {
    }
 
   Future<Transaction> updateTransaction(Transaction transaction) async {
-    if (transaction.id == null) {
-      throw Exception("Transaction ID is required for update.");
-    }
     try {
       print("ApiService: Calling PUT /transactions/${transaction.id}");
-      // Используем toJson(), который теперь включает amount_to_goal если нужно
-      final data = transaction.toJson();
-      print("ApiService: Sending data for update: $data"); // Логируем отправляемые данные
+      // Используем toJson() для получения данных
+      final Map<String, dynamic> data = transaction.toJson();
+      print("ApiService: Sending data for update: $data");
 
-      final response = await _dio.put('/transactions/${transaction.id}', data: data);
+      final response = await _dio.put(
+        '/transactions/${transaction.id}',
+        data: data, // Передаем данные из toJson()
+      );
 
-      if (response.data is Map<String, dynamic> && response.data.containsKey('transaction')) {
-        return Transaction.fromJson(response.data['transaction']);
-      } else {
+      print("ApiService: Update response: ${response.data}");
+
+      if (response.data != null) {
+        // Парсим ответ обратно в Transaction
         return Transaction.fromJson(response.data);
+      } else {
+        // Обработка случая, если ответ пустой
+        print("ApiService: Warning - Update response data is null.");
+        // Можно вернуть исходную транзакцию или выбросить ошибку
+        return transaction;
+      }
+    } on DioException catch (e) { // Используем DioException
+      print("ApiService handleError: DioException Type: ${e.type}");
+      if (e.response != null) {
+        print("ApiService Error Response: ${e.response?.data}");
+        // Попытка извлечь сообщение об ошибке из ответа сервера
+        String serverMessage = "Ошибка сервера";
+        try {
+          serverMessage = e.response?.data['message'] ?? serverMessage;
+        } catch (_) {}
+        throw Exception(serverMessage);
+      } else {
+        // Ошибка сети или другая ошибка Dio
+        print("ApiService Dio Error: ${e.message}");
+        throw Exception("Ошибка сети: ${e.message}");
       }
     } catch (e) {
-      print("ApiService: Error updating transaction: $e");
-      throw _handleError(e);
+      print("ApiService General Error: $e");
+      throw Exception("Произошла ошибка: $e");
     }
   }
 

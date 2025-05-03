@@ -132,18 +132,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Widget
       // Получаем строковый идентификатор пользователя
       final userId = Provider.of<AuthProvider>(context, listen: false).authData?.id.toString();
 
-      final transaction = Transaction(
+      final Transaction newTransaction = Transaction(
         amount: _isExpense ? -amount.abs() : amount.abs(),
         categoryId: _selectedCategoryId!,
         date: _selectedDate,
         description: _descriptionController.text,
         goalId: _selectedGoalId,
-        userId: userId,
-        amountToGoal: amountToGoal,
+        amountContributedToGoal: amountToGoal,
+        userId: userId ?? '',
+        createdAt: DateTime.now(),
       );
 
       final success = await Provider.of<TransactionProvider>(context, listen: false)
-          .addTransaction(transaction);
+          .addTransaction(newTransaction);
 
       if (success) {
         // Очищаем поля ввода вместо возврата на предыдущий экран

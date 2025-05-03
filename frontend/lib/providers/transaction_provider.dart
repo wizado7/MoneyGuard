@@ -70,30 +70,19 @@ class TransactionProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> addTransaction(Transaction transaction, [BuildContext? context]) async {
+  Future<bool> addTransaction(Transaction transaction) async {
     if (_authProvider == null || !_authProvider!.isAuthenticated) return false;
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
-      print("TransactionProvider: Adding transaction...");
-      final newTransaction = await _apiService.createTransaction(transaction);
-      _transactions.insert(0, newTransaction);
+      print("TransactionProvider: Adding transaction: ${transaction.description}");
+      
+      final createdTransaction = await _apiService.createTransaction(transaction);
+      _transactions.add(createdTransaction);
       _sortTransactions();
+      
       print("TransactionProvider: Transaction added successfully.");
-
-      // Безопасно обновляем цели, если провайдер доступен
-      if (_goalProvider != null) {
-        try {
-          print("TransactionProvider: Refreshing goals after adding transaction...");
-          await _goalProvider!.fetchGoals();
-          print("TransactionProvider: Goals refreshed successfully.");
-        } catch (e) {
-          print("TransactionProvider: Error refreshing goals: $e");
-          // Не прерываем выполнение основного метода из-за ошибки обновления целей
-        }
-      }
-
       _isLoading = false;
       notifyListeners();
       return true;
@@ -106,30 +95,18 @@ class TransactionProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> updateTransaction(Transaction transaction, [BuildContext? context]) async {
+  Future<bool> updateTransaction(Transaction transaction) async {
     if (_authProvider == null || !_authProvider!.isAuthenticated) return false;
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
       print("TransactionProvider: Updating transaction ${transaction.id}...");
+      print("Amount contributed to goal: ${transaction.amountContributedToGoal}");
       
-      // Создаем новую транзакцию с абсолютным значением суммы
-      final transactionToUpdate = Transaction(
-        id: transaction.id,
-        amount: transaction.amount.abs(), // Используем абсолютное значение
-        categoryId: transaction.categoryId,
-        categoryName: transaction.categoryName,
-        date: transaction.date,
-        description: transaction.description,
-        goalId: transaction.goalId,
-        userId: transaction.userId,
-        createdAt: transaction.createdAt,
-        amountToGoal: transaction.amountToGoal,
-      );
+      final updatedTransaction = await _apiService.updateTransaction(transaction);
       
-      // Используем существующий метод в ApiService
-      final updatedTransaction = await _apiService.updateTransaction(transactionToUpdate);
+      print("Response from API: amountContributedToGoal=${updatedTransaction.amountContributedToGoal}");
       
       // Обновляем локальный список
       final index = _transactions.indexWhere((t) => t.id == transaction.id);
@@ -158,7 +135,7 @@ class TransactionProvider with ChangeNotifier {
       return true;
     } catch (e) {
       print("TransactionProvider: Error updating transaction: $e");
-      _error = e.toString();
+      rethrow;
       _isLoading = false;
       notifyListeners();
       return false;
