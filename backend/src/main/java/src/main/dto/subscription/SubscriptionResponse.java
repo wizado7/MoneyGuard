@@ -13,8 +13,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubscriptionResponse {
-    private boolean ai_access_enabled;
-    private String subscription_type;
-    private LocalDate expiry_date;
+    @Builder.Default
+    private boolean aiAccessEnabled = false;
+    private String subscriptionType;
+    private LocalDate expiryDate;
     private List<String> features;
 } 

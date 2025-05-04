@@ -35,8 +35,8 @@ public class SubscriptionService {
         }
         
         return SubscriptionResponse.builder()
-                .ai_access_enabled(user.isAiAccessEnabled())
-                .subscription_type(user.isAiAccessEnabled() ? "PREMIUM" : "FREE")
+                .aiAccessEnabled(user.isAiAccessEnabled())
+                .subscriptionType(user.isAiAccessEnabled() ? "PREMIUM" : "FREE")
                 .features(features)
                 .build();
     }
@@ -57,8 +57,8 @@ public class SubscriptionService {
         features.add("Приоритетная техническая поддержка");
         
         return SubscriptionResponse.builder()
-                .ai_access_enabled(true)
-                .subscription_type("PREMIUM")
+                .aiAccessEnabled(true)
+                .subscriptionType("PREMIUM")
                 .features(features)
                 .build();
     }

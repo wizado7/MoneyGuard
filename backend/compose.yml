@@ -1,11 +1,12 @@
-version: '3.8'
-
 services:
   app:
     build: .
     container_name: moneyguard-backend
+    restart: always
     ports:
       - "8080:8080"
+    security_opt:
+      - apparmor=unconfined
     depends_on:
       postgres:
         condition: service_healthy
@@ -14,6 +15,8 @@ services:
     env_file:
       - .env
     environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SERVER_PORT=${SERVER_PORT}
       - SPRING_DATASOURCE_URL=${DB_URL}
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
@@ -27,8 +30,11 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: moneyguard-postgres
+    restart: always
     ports:
       - "5432:5432"
+    security_opt:
+      - apparmor=unconfined
     environment:
       - POSTGRES_DB=moneyguard
       - POSTGRES_USER=${DB_USERNAME}
@@ -47,8 +53,11 @@ services:
   redis:
     image: redis:7-alpine
     container_name: moneyguard-redis
+    restart: always
     ports:
       - "6379:6379"
+    security_opt:
+      - apparmor=unconfined
     volumes:
       - redis-data:/data
     healthcheck:

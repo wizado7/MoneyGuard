@@ -22,30 +22,43 @@ public class OpenApiConfig {
     @Value("${server.servlet.context-path}")
     private String contextPath;
 
+    @Value("${app.server.url}")
+    private String serverUrl;
+
+    @Value("${spring.application.name}")
+    private String appName;
+
+    @Value("${app.version:1.0.0}")
+    private String appVersion;
+
+    @Value("${springdoc.api-docs.path}")
+    private String apiDocsPath;
+
+    @Value("${springdoc.swagger-ui.path}")
+    private String swaggerPath;
+
     @Bean
     public OpenAPI openAPI() {
+        String fullServerUrl = serverUrl + contextPath;
+        log.info("Configuring OpenAPI for server URL: {}", fullServerUrl);
+
         try {
-            log.debug("Configuring OpenAPI with context path: {}", contextPath);
-            
             return new OpenAPI()
                     .info(new Info()
-                            .title("MoneyGuard API")
-                            .description("API для приложения управления личными финансами MoneyGuard")
-                            .version("1.0.0")
+                            .title(appName + " API")
+                            .description("API для приложения управления личными финансами " + appName)
+                            .version(appVersion)
                             .contact(new Contact()
-                                    .name("MoneyGuard Team")
-                                    .email("123")
-                                    .url("123"))
+                                    .name(appName + " Team")
+                                    .email("support@example.com")
+                                    .url("https://example.com"))
                             .license(new License()
-                                    .name("123")
-                                    .url("123")))
+                                    .name("Specify License")
+                                    .url("Specify License URL")))
                     .servers(List.of(
                             new Server()
-                                    .url("http://localhost:8080" + contextPath)
-                                    .description("Local Development Server"),
-                            new Server()
-                                    .url("https://api.moneyguard.ru" + contextPath)
-                                    .description("Production Server")))
+                                    .url(fullServerUrl)
+                                    .description("Server for the current environment (" + getActiveProfileDescription() + ")")))
                     .components(new Components()
                             .addSecuritySchemes("bearerAuth", new SecurityScheme()
                                     .type(SecurityScheme.Type.HTTP)
@@ -55,7 +68,15 @@ public class OpenApiConfig {
                     .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
         } catch (Exception e) {
             log.error("Error configuring OpenAPI: {}", e.getMessage(), e);
-            throw e;
+            throw new RuntimeException("Failed to configure OpenAPI", e);
         }
+    }
+
+    private String getActiveProfileDescription() {
+        String activeProfiles = System.getProperty("spring.profiles.active");
+        if (activeProfiles != null && !activeProfiles.isEmpty()) {
+            return activeProfiles;
+        }
+        return "default";
     }
 } 
