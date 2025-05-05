@@ -6,7 +6,7 @@
 [![OpenAPI Docs](https://img.shields.io/badge/API_Docs-ReDoc-blue)](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/wizado7/MoneyGuard/main/Documentation/api/openapi.yaml)
 [![Technical Scpec](https://img.shields.io/badge/Technical_Specifications-PDF-blue)](https://github.com/wizado7/MoneyGuard/blob/main/Documentation/tz/TZ.pdf)
 [![Presentation Video](https://img.shields.io/badge/YouTube-Video_Presentation-red?logo=youtube)](https://youtu.be/J_SbZfkjXYc)
-[![Report Video](https://img.shields.io/badge/YouTube-Video_Report-red?logo=youtube)]([https://youtu.be/Qyp5iFMgo_g])
+[![Report Video](https://img.shields.io/badge/YouTube-Video_Report-red?logo=youtube)](https://youtu.be/Qyp5iFMgo_g)
 [![Task Tracker](https://img.shields.io/badge/Weeek-Task_Tracker-blue?logo=trello)](https://app.weeek.net/ws/765643/shared/board/pCvCZlCfqLW0pM9d78EEVriCExHBJETf)
 
 ## 📌 О проекте
@@ -53,7 +53,7 @@ MoneyGuard помогает взять под контроль личные фи
 
 ## 🔗 Быстрые ссылки
 ▶️ [Видеопрезентация](https://youtu.be/J_SbZfkjXYc)  
-▶️ [Промежуточный отчет видео]((https://youtu.be/Qyp5iFMgo_g))  
+▶️ [Промежуточный отчет видео](https://youtu.be/Qyp5iFMgo_g)
 📋 [Главная доска](https://app.weeek.net/ws/765643/shared/board/pCvCZlCfqLW0pM9d78EEVriCExHBJETf), 📋[Доска backend](https://app.weeek.net/ws/765643/shared/board/w4LTLAQwLxL7LriuHKKwbTc94ETcmUgp), 📋[Доска frontend](https://app.weeek.net/ws/765643/shared/board/mTd7tOupLX7b6svC3pmEpZKQWcrHRA5s), 📋[Доска test](https://app.weeek.net/ws/765643/shared/board/OqvWMVcwJyCLArzsp6xqrPXubLgxWgj9)  
 📄 [Техническое задание](https://github.com/wizado7/MoneyGuard/blob/main/Documentation/tz/TZ.pdf)  
 📄 [Предпроектное исследование](https://github.com/wizado7/MoneyGuard/blob/main/Documentation/predevelopment_analysis/predevelopment_analysis.pdf)  
