@@ -13,6 +13,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+          
+      - name: Run tests
+        run: mvn test --no-transfer-progress 
+
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
