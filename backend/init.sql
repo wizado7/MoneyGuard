@@ -11,10 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 DROP TABLE IF EXISTS categories CASCADE;
 
-<<<<<<< HEAD
 -- Таблица категорий
-=======
->>>>>>> c0f34002661add7913228b8e32ea65a5b9406288
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -27,10 +24,7 @@ CREATE TABLE IF NOT EXISTS categories (
     UNIQUE (name)
 );
 
-<<<<<<< HEAD
 -- Таблица целей
-=======
->>>>>>> c0f34002661add7913228b8e32ea65a5b9406288
 CREATE TABLE IF NOT EXISTS goals (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -43,10 +37,7 @@ CREATE TABLE IF NOT EXISTS goals (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-<<<<<<< HEAD
 -- Таблица транзакций (после users, categories и goals)
-=======
->>>>>>> c0f34002661add7913228b8e32ea65a5b9406288
 CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -58,10 +49,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-<<<<<<< HEAD
 -- Таблица лимитов
-=======
->>>>>>> c0f34002661add7913228b8e32ea65a5b9406288
 CREATE TABLE IF NOT EXISTS limits (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -79,20 +67,14 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     UNIQUE (user_id)
 );
 
-<<<<<<< HEAD
 -- Индексы
-=======
->>>>>>> c0f34002661add7913228b8e32ea65a5b9406288
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id);
 CREATE INDEX IF NOT EXISTS idx_limits_user_id ON limits(user_id);
 
-<<<<<<< HEAD
 -- Вставка категорий по умолчанию
-=======
->>>>>>> c0f34002661add7913228b8e32ea65a5b9406288
 INSERT INTO categories (name, icon, is_income, is_system, color, icon_name) VALUES
   ('Продукты', 'shopping_cart', FALSE, TRUE, '#4CAF50', 'shopping_cart'),
   ('Транспорт', 'directions_car', FALSE, TRUE, '#2196F3', 'directions_car'),
@@ -113,8 +95,5 @@ INSERT INTO categories (name, icon, is_income, is_system, color, icon_name) VALU
   ('Другое (доход)', 'help_outline', TRUE, TRUE, '#9E9E9E', 'help_outline')
 ON CONFLICT (name) DO NOTHING;
 
-<<<<<<< HEAD
 -- Обновление категорий
-=======
->>>>>>> c0f34002661add7913228b8e32ea65a5b9406288
 UPDATE categories SET is_income = true WHERE name IN ('Зарплата', 'Подарки', 'Инвестиции', 'Подработка');

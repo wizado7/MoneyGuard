@@ -4,7 +4,7 @@ services:
     container_name: moneyguard-backend
     restart: always
     ports:
-      - "8080:8080"
+      - "45678:8080"
     security_opt:
       - apparmor=unconfined
     depends_on:
