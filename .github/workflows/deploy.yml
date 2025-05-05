@@ -18,11 +18,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          working-directory: ./backend
           cache: 'maven'
           
       - name: Run tests
-        run: mvn test --no-transfer-progress 
+        run: |
+          cd backend
+          mvn test --no-transfer-progress
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.7.0
