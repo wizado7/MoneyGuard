@@ -64,8 +64,8 @@ MoneyGuard помогает взять под контроль личные фи
 
 ## ✅ Наш [Чек-лист](https://docs.google.com/spreadsheets/d/1cfGVbr18j8LwufJ-sXo4wqPIhHYh7-kiY-nGHST9bUM/edit?gid=0#gid=0) 
 Нас оценивали:
-- **4 группа 1 спец команда [Git](https://github.com/noviyblock/TechTrek-Web-repository) [Чек-лист](https://docs.google.com/spreadsheets/d/13YKOvzV7jyS1OseR_betV5oW4j_kMyNTD6rEV9CL7d4/edit?usp=sharing)**
+- **4 группа 1 спец команда [Git](https://github.com/noviyblock/TechTrek-Web-repository) [Чек-лист 1](https://docs.google.com/spreadsheets/d/13YKOvzV7jyS1OseR_betV5oW4j_kMyNTD6rEV9CL7d4/edit?usp=sharing), [Чек-лист 2](https://docs.google.com/spreadsheets/d/16xFaDXzNxKSrtZaR0VIYNgHAEtms-4v47aozlcLBHlE/edit?gid=0#gid=0)**
 - **9 группа 3 команда [Git](https://github.com/slash0t/travel-planner) [Чек-лист](https://docs.google.com/spreadsheets/d/195jVLHMlAAU-fgBwmSOLQPdO-yhVrDwKYtFTor5-Xs4/edit?gid=106249898#gid=106249898)**
-- **8 группа 5 команда [Git](https://gitlab.com/vsu.cs/TPmain) [Чек-лист](https://github.com/slash0t/travel-planner/blob/main/documentation/%D0%A7%D0%B5%D0%BA%D0%BB%D0%B8%D1%81%D1%82%20%D0%BE%D1%86%D0%B5%D0%BD%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F.pdf)**
+- **8 группа 5 команда [Git](https://gitlab.com/vsu.cs/TPmain) [Чек-лист 1](https://github.com/slash0t/travel-planner/blob/main/documentation/%D0%A7%D0%B5%D0%BA%D0%BB%D0%B8%D1%81%D1%82%20%D0%BE%D1%86%D0%B5%D0%BD%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F.pdf), [Чек-лист 2](https://docs.google.com/spreadsheets/d/1vsXH9SvBhD0p94vhBCQfikfSvJPE_lxe2iU1Q3-Z0Ew/edit?gid=0#gid=0)**
 - **10 группа 2 команда [Git](https://github.com/Ikramus/fitness-ai?tab=readme-ov-file) [Чек-лист](https://docs.google.com/spreadsheets/d/1LtXZlFm_UbMDezV3RIYXoj2cIRNN2LuDyQXwmJ8V7M8/edit?gid=116236438#gid=116236438)**
  
