@@ -72,7 +72,7 @@ public class DevSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         log.debug("Конфигурирование CORS для dev-профиля");
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:8080"));
+        configuration.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:3000", "http://localhost:45678"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));

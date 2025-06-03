@@ -1,6 +1,7 @@
 package src.main.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,16 +13,20 @@ import src.main.repository.TransactionRepository;
 import src.main.repository.UserRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AIService {
 
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private final HttpGeminiService httpGeminiService;
 
     public AnalysisResponse getAnalysis() {
         User currentUser = getCurrentUser();
@@ -66,31 +71,107 @@ public class AIService {
     }
 
     public AIChatResponse chat(String message, MultipartFile image) {
-        // Здесь должна быть логика обработки запроса к ИИ
-        // Для примера просто возвращаем заглушку
+        log.debug("Обработка AI чата для сообщения: {}", message);
         
-        List<String> advice = new ArrayList<>();
-        advice.add("Рекомендуем сократить расходы на развлечения");
-        advice.add("Попробуйте увеличить ежемесячные отчисления на цели");
-        
-        List<String> actions = new ArrayList<>();
-        actions.add("Установить лимит на категорию 'Рестораны'");
-        actions.add("Создать новую финансовую цель");
-        
-        return AIChatResponse.builder()
-                .message("Я проанализировал ваши финансы и нашел несколько возможностей для оптимизации.")
-                .advice(advice)
-                .actions(actions)
-                .build();
+        try {
+            // Получаем контекст пользователя для более персонализированного ответа
+            String userContext = buildUserContext();
+            
+            // Формируем полный запрос с контекстом
+            String fullMessage = String.format(
+                "Контекст пользователя:\n%s\n\nВопрос пользователя: %s\n\n" +
+                "Дай практический совет по личным финансам на основе этой информации.",
+                userContext, message
+            );
+            
+            // Получаем ответ от Gemini API
+            String aiResponse = httpGeminiService.generateFinancialAdvice(fullMessage);
+            
+            // Парсим ответ и формируем структурированный результат
+            List<String> advice = parseAdviceFromResponse(aiResponse);
+            List<String> actions = generateActionsFromAdvice(advice);
+            
+            return AIChatResponse.builder()
+                    .message(aiResponse)
+                    .advice(advice)
+                    .actions(actions)
+                    .build();
+                    
+        } catch (Exception e) {
+            log.error("Ошибка при обработке AI чата: {}", e.getMessage(), e);
+            
+            // Возвращаем fallback ответ
+            List<String> fallbackAdvice = Arrays.asList(
+                "Рекомендуем вести регулярный учет доходов и расходов",
+                "Создайте финансовую подушку безопасности",
+                "Планируйте крупные покупки заранее"
+            );
+            
+            List<String> fallbackActions = Arrays.asList(
+                "Установить лимиты на категории расходов",
+                "Создать финансовую цель"
+            );
+            
+            return AIChatResponse.builder()
+                    .message("Извините, произошла временная ошибка. Вот общие рекомендации по управлению финансами.")
+                    .advice(fallbackAdvice)
+                    .actions(fallbackActions)
+                    .build();
+        }
     }
 
     private List<String> findAnomalies(List<Transaction> transactions) {
-        // Здесь должна быть логика поиска аномалий
-        // Для примера просто возвращаем заглушку
-        
         List<String> anomalies = new ArrayList<>();
-        anomalies.add("Расходы на категорию 'Рестораны' выше обычного на 30%");
-        anomalies.add("Необычно высокая транзакция в категории 'Одежда'");
+        
+        if (transactions.isEmpty()) {
+            return anomalies;
+        }
+        
+        try {
+            // Группируем транзакции по категориям
+            Map<String, List<Transaction>> transactionsByCategory = transactions.stream()
+                    .filter(t -> t.getCategory() != null)
+                    .collect(Collectors.groupingBy(t -> t.getCategory().getName()));
+            
+            // Анализируем каждую категорию
+            for (Map.Entry<String, List<Transaction>> entry : transactionsByCategory.entrySet()) {
+                String category = entry.getKey();
+                List<Transaction> categoryTransactions = entry.getValue();
+                
+                // Вычисляем среднюю сумму для категории
+                BigDecimal averageAmount = categoryTransactions.stream()
+                        .map(Transaction::getAmount)
+                        .map(BigDecimal::abs)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .divide(BigDecimal.valueOf(categoryTransactions.size()), 2, RoundingMode.HALF_UP);
+                
+                // Ищем транзакции, значительно превышающие среднее
+                for (Transaction transaction : categoryTransactions) {
+                    BigDecimal amount = transaction.getAmount().abs();
+                    if (amount.compareTo(averageAmount.multiply(BigDecimal.valueOf(2))) > 0) {
+                        anomalies.add(String.format("Необычно высокая транзакция в категории '%s': %.2f руб.", 
+                                category, amount));
+                    }
+                }
+            }
+            
+            // Если аномалий не найдено, добавляем общие наблюдения
+            if (anomalies.isEmpty()) {
+                BigDecimal totalExpenses = transactions.stream()
+                        .filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) < 0)
+                        .map(Transaction::getAmount)
+                        .map(BigDecimal::abs)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                
+                if (totalExpenses.compareTo(BigDecimal.valueOf(50000)) > 0) {
+                    anomalies.add("Общая сумма расходов довольно высокая");
+                }
+            }
+            
+        } catch (Exception e) {
+            log.error("Ошибка при поиске аномалий: {}", e.getMessage(), e);
+            anomalies.add("Не удалось проанализировать аномалии в транзакциях");
+        }
         
         return anomalies;
     }
@@ -110,4 +191,168 @@ public class AIService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
     }
-} 
+
+    private String buildUserContext() {
+        try {
+            User currentUser = getCurrentUser();
+            LocalDate dateFrom = LocalDate.now().minusMonths(1);
+            LocalDate dateTo = LocalDate.now();
+            
+            List<Transaction> recentTransactions = transactionRepository.findByUserAndDateBetweenOrderByDateDesc(
+                    currentUser, dateFrom, dateTo);
+            
+            if (recentTransactions.isEmpty()) {
+                return "Пользователь: " + currentUser.getEmail() + "\nТранзакций за последний месяц не найдено.";
+            }
+            
+            StringBuilder context = new StringBuilder();
+            context.append("Пользователь: ").append(currentUser.getEmail()).append("\n");
+            context.append("Анализ за период: ").append(dateFrom).append(" - ").append(dateTo).append("\n\n");
+            
+            // Подсчитываем общие доходы и расходы
+            BigDecimal totalIncome = BigDecimal.ZERO;
+            BigDecimal totalExpenses = BigDecimal.ZERO;
+            Map<String, BigDecimal> categoryExpenses = new HashMap<>();
+            
+            for (Transaction transaction : recentTransactions) {
+                BigDecimal amount = transaction.getAmount();
+                if (amount.compareTo(BigDecimal.ZERO) > 0) {
+                    totalIncome = totalIncome.add(amount);
+                } else {
+                    totalExpenses = totalExpenses.add(amount.abs());
+                    String categoryName = transaction.getCategory() != null ? 
+                            transaction.getCategory().getName() : "Без категории";
+                    categoryExpenses.put(categoryName, 
+                            categoryExpenses.getOrDefault(categoryName, BigDecimal.ZERO).add(amount.abs()));
+                }
+            }
+            
+            context.append("Общий доход: ").append(totalIncome).append(" руб.\n");
+            context.append("Общие расходы: ").append(totalExpenses).append(" руб.\n");
+            context.append("Баланс: ").append(totalIncome.subtract(totalExpenses)).append(" руб.\n\n");
+            
+            context.append("Расходы по категориям:\n");
+            categoryExpenses.entrySet().stream()
+                    .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
+                    .forEach(entry -> context.append("- ").append(entry.getKey())
+                            .append(": ").append(entry.getValue()).append(" руб.\n"));
+            
+            return context.toString();
+            
+        } catch (Exception e) {
+            log.error("Ошибка при построении контекста пользователя: {}", e.getMessage(), e);
+            return "Контекст пользователя недоступен из-за ошибки.";
+        }
+    }
+
+    private List<String> parseAdviceFromResponse(String response) {
+        if (response == null || response.trim().isEmpty()) {
+            return Arrays.asList("Не удалось получить рекомендации от AI");
+        }
+        
+        List<String> advice = new ArrayList<>();
+        
+        try {
+            // Разбиваем ответ на строки и ищем пункты с советами
+            String[] lines = response.split("\n");
+            
+            for (String line : lines) {
+                line = line.trim();
+                
+                // Ищем строки, которые начинаются с маркеров списка или цифр
+                if (line.matches("^[0-9]+[.)\\s].*") || 
+                    line.matches("^[-*•]\\s.*") ||
+                    (line.length() > 10 && (line.contains("рекомендую") || line.contains("совет")))) {
+                    
+                    // Очищаем от маркеров
+                    String cleanAdvice = line.replaceAll("^[0-9]+[.)\\s]*", "")
+                                           .replaceAll("^[-*•]\\s*", "")
+                                           .trim();
+                    
+                    if (cleanAdvice.length() > 5) { // Минимальная длина для валидного совета
+                        advice.add(cleanAdvice);
+                    }
+                }
+            }
+            
+            // Если не удалось найти структурированные советы, разбиваем на предложения
+            if (advice.isEmpty()) {
+                String[] sentences = response.split("[.!?]+");
+                for (String sentence : sentences) {
+                    sentence = sentence.trim();
+                    if (sentence.length() > 20 && 
+                        (sentence.contains("рекомендую") || sentence.contains("стоит") || 
+                         sentence.contains("можно") || sentence.contains("нужно"))) {
+                        advice.add(sentence);
+                    }
+                }
+            }
+            
+            // Ограничиваем количество советов
+            if (advice.size() > 5) {
+                advice = advice.subList(0, 5);
+            }
+            
+        } catch (Exception e) {
+            log.error("Ошибка при парсинге советов: {}", e.getMessage(), e);
+            advice.add("Ошибка при обработке рекомендаций AI");
+        }
+        
+        // Если ничего не найдено, возвращаем базовые советы
+        if (advice.isEmpty()) {
+            advice.addAll(Arrays.asList(
+                "Ведите регулярный учет доходов и расходов",
+                "Создайте финансовую подушку безопасности на 3-6 месяцев",
+                "Планируйте крупные покупки заранее"
+            ));
+        }
+        
+        return advice;
+    }
+
+    private List<String> generateActionsFromAdvice(List<String> advice) {
+        List<String> actions = new ArrayList<>();
+        
+        try {
+            for (String adviceItem : advice) {
+                String lowerAdvice = adviceItem.toLowerCase();
+                
+                // Анализируем содержание совета и предлагаем конкретные действия
+                if (lowerAdvice.contains("бюджет") || lowerAdvice.contains("планирование")) {
+                    actions.add("Настроить бюджет в приложении");
+                } else if (lowerAdvice.contains("категори") || lowerAdvice.contains("расход")) {
+                    actions.add("Установить лимиты на категории расходов");
+                } else if (lowerAdvice.contains("накопления") || lowerAdvice.contains("сбережения")) {
+                    actions.add("Создать цель накоплений");
+                } else if (lowerAdvice.contains("долг") || lowerAdvice.contains("кредит")) {
+                    actions.add("Запланировать погашение долгов");
+                } else if (lowerAdvice.contains("инвестиции") || lowerAdvice.contains("вложения")) {
+                    actions.add("Изучить инвестиционные возможности");
+                } else if (lowerAdvice.contains("экономия") || lowerAdvice.contains("сокращ")) {
+                    actions.add("Проанализировать возможности экономии");
+                } else {
+                    // Общее действие для неклассифицированных советов
+                    actions.add("Применить рекомендацию в финансовом планировании");
+                }
+            }
+            
+            // Удаляем дубликаты
+            actions = actions.stream().distinct().collect(Collectors.toList());
+            
+            // Добавляем базовые действия если список пуст
+            if (actions.isEmpty()) {
+                actions.addAll(Arrays.asList(
+                    "Настроить уведомления о тратах",
+                    "Создать финансовую цель",
+                    "Просмотреть отчет по расходам"
+                ));
+            }
+            
+        } catch (Exception e) {
+            log.error("Ошибка при генерации действий: {}", e.getMessage(), e);
+            actions.add("Ошибка при формировании рекомендуемых действий");
+        }
+        
+        return actions;
+    }
+}
