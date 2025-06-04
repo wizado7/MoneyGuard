@@ -532,11 +532,25 @@ class ApiService {
       final response = await _dio.post('/ai/chat',
         data: { 'message': message },
       );
-      if (response.data != null && response.data['response'] != null) {
-         return response.data['response'];
-      } else {
-         throw Exception('Неожиданный формат ответа от AI чата');
+      
+      print('ApiService: AI chat response data: ${response.data}');
+      
+      // Проверяем разные возможные форматы ответа
+      if (response.data != null) {
+        if (response.data is String) {
+          // Если ответ - просто строка
+          return response.data;
+        } else if (response.data is Map) {
+          // Если ответ - объект, ищем поле message или response
+          if (response.data['message'] != null) {
+            return response.data['message'];
+          } else if (response.data['response'] != null) {
+            return response.data['response'];
+          }
+        }
       }
+      
+      throw Exception('Неожиданный формат ответа от AI чата: ${response.data}');
     } catch (e) { throw _handleError(e); }
   }
 
@@ -641,5 +655,20 @@ class ApiService {
       }
     }
     return Exception('Неизвестная ошибка: $error');
+  }
+
+  Future<List<Map<String, dynamic>>> getChatHistory() async {
+    try {
+      print('ApiService: Calling GET /ai/chat/history');
+      final response = await _dio.get('/ai/chat/history');
+      
+      if (response.data != null && response.data is List) {
+        return List<Map<String, dynamic>>.from(response.data);
+      }
+      
+      return [];
+    } catch (e) {
+      throw _handleError(e);
+    }
   }
 } 

@@ -4,6 +4,7 @@ import '../models/transaction.dart';
 import '../services/api_service.dart';
 import 'package:moneyguard/providers/auth_provider.dart';
 import '../providers/goal_provider.dart';
+import '../providers/ai_chat_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -70,7 +71,7 @@ class TransactionProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> addTransaction(Transaction transaction) async {
+  Future<bool> addTransaction(Transaction transaction, [BuildContext? context]) async {
     if (_authProvider == null || !_authProvider!.isAuthenticated) return false;
     _isLoading = true;
     _error = null;
@@ -83,6 +84,21 @@ class TransactionProvider with ChangeNotifier {
       _sortTransactions();
       
       print("TransactionProvider: Transaction added successfully.");
+      
+      // Обновляем историю чата после создания транзакции
+      if (context != null) {
+        try {
+          final aiChatProvider = Provider.of<AIChatProvider>(context, listen: false);
+          // Используем небольшую задержку, чтобы бэкенд успел сохранить рекомендации
+          await Future.delayed(Duration(seconds: 1));
+          await aiChatProvider.loadChatHistory();
+          print("TransactionProvider: AI chat history refreshed after transaction creation.");
+        } catch (e) {
+          print("TransactionProvider: Error refreshing AI chat history: $e");
+          // Не прерываем выполнение из-за ошибки обновления истории чата
+        }
+      }
+      
       _isLoading = false;
       notifyListeners();
       return true;

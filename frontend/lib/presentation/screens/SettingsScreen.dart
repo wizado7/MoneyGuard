@@ -27,57 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: EdgeInsets.all(16),
         children: [
-          // Секция приложения
-          _buildSectionHeader('Приложение'),
-          _buildSettingItem(
-            'Темная тема',
-            Icons.dark_mode,
-            trailing: Switch(
-              value: _darkModeEnabled,
-              onChanged: (value) {
-                setState(() {
-                  _darkModeEnabled = value;
-                });
-              },
-              activeColor: AppTheme.primaryColor,
-            ),
-          ),
-          _buildSettingItem(
-            'Валюта',
-            Icons.currency_exchange,
-            trailing: DropdownButton<String>(
-              value: _currency,
-              dropdownColor: AppTheme.cardColor,
-              style: TextStyle(color: AppTheme.textColor),
-              underline: SizedBox(),
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _currency = newValue;
-                  });
-                }
-              },
-              items: _currencies.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          ),
-          _buildSettingItem(
-            'Уведомления',
-            Icons.notifications,
-            trailing: Switch(
-              value: _notificationsEnabled,
-              onChanged: (value) {
-                setState(() {
-                  _notificationsEnabled = value;
-                });
-              },
-              activeColor: AppTheme.primaryColor,
-            ),
-          ),
+
 
           SizedBox(height: 24),
 

@@ -144,7 +144,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Widget
       );
 
       final success = await Provider.of<TransactionProvider>(context, listen: false)
-          .addTransaction(newTransaction);
+          .addTransaction(newTransaction, context);
 
       if (success) {
         // Очищаем поля ввода вместо возврата на предыдущий экран

@@ -18,6 +18,9 @@ class AuthResponse {
   @JsonKey(name: 'ai_access_enabled')
   final bool aiAccessEnabled;
 
+  @JsonKey(name: 'subscription_type', defaultValue: 'FREE')
+  final String subscriptionType;
+
   final int? id;
 
   AuthResponse({
@@ -27,6 +30,7 @@ class AuthResponse {
     required this.email,
     required this.name,
     required this.aiAccessEnabled,
+    this.subscriptionType = 'FREE',
     this.id,
   });
 

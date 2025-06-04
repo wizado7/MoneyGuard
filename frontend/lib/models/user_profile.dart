@@ -4,21 +4,17 @@ part 'user_profile.g.dart';
 
 @JsonSerializable()
 class UserProfile {
-  final String id;
+  final int id;
   final String name;
   final String email;
-  @JsonKey(name: 'profile_image')
+  @JsonKey(name: 'profileImage')
   final String? profileImage;
-  @JsonKey(name: 'ai_access_enabled')
+  @JsonKey(name: 'aiAccessEnabled')
   final bool aiAccessEnabled;
-  @JsonKey(name: 'subscription_type')
+  @JsonKey(name: 'subscriptionType')
   final String? subscriptionType;
-  @JsonKey(name: 'subscription_expiry')
-  final DateTime? subscriptionExpiry;
-  @JsonKey(name: 'created_at')
-  final DateTime? createdAt;
-  @JsonKey(name: 'updated_at')
-  final DateTime? updatedAt;
+  @JsonKey(name: 'subscriptionExpiry')
+  final String? subscriptionExpiry;
 
   UserProfile({
     required this.id,
@@ -28,8 +24,6 @@ class UserProfile {
     required this.aiAccessEnabled,
     this.subscriptionType,
     this.subscriptionExpiry,
-    this.createdAt,
-    this.updatedAt,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) =>
@@ -37,5 +31,5 @@ class UserProfile {
 
   Map<String, dynamic> toJson() => _$UserProfileToJson(this);
 
-  String get fullName => '$name';
+  String get fullName => name;
 } 

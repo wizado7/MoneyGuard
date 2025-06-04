@@ -26,6 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     final profileProvider = Provider.of<ProfileProvider>(context);
@@ -320,6 +321,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+
   Widget _buildProfileContent(ProfileProvider profileProvider, AuthProvider authProvider) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -340,7 +342,94 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           // Секция настроек
           _buildSettingsSection(context),
+          SizedBox(height: 24),
+
+          // Секция PREMIUM подписки
+          PremiumSubscriptionSection(), // 👈 Added here
         ],
+      ),
+    );
+
+  }
+
+}
+
+
+//Subscription Section
+class PremiumSubscriptionSection extends StatefulWidget {
+  @override
+  _PremiumSubscriptionSectionState createState() => _PremiumSubscriptionSectionState();
+}
+
+class _PremiumSubscriptionSectionState extends State<PremiumSubscriptionSection> {
+  final TextEditingController _cardNumberController = TextEditingController();
+  final TextEditingController _expiryDateController = TextEditingController();
+  final TextEditingController _cvvController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _submitSubscription() async {
+    setState(() => _isLoading = true);
+
+    try {
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Simulated POST request (replace with Dio later)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Subscription successful (mocked)")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: \$e")),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(top: 24),
+      color: AppTheme.cardColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Получить PREMIUM',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _cardNumberController,
+              decoration: const InputDecoration(labelText: 'Номер карты'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _expiryDateController,
+              decoration: const InputDecoration(labelText: 'Срок действия (MM/YY)'),
+            ),
+            TextField(
+              controller: _cvvController,
+              decoration: const InputDecoration(labelText: 'CVV'),
+              obscureText: true,
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _submitSubscription,
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Оплатить'),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -86,24 +86,33 @@ class MyApp extends StatelessWidget {
            update: (_, auth, previous) => (previous ?? StatisticsProvider()), 
         ),
       ],
-      child: MaterialApp(
-        title: 'MoneyGuard',
-        theme: AppTheme.darkTheme,
-        debugShowCheckedModeBanner: false,
-        navigatorObservers: [ _KeyboardDismissNavigatorObserver() ],
-        home: Consumer<AuthProvider>(
-          builder: (ctx, auth, _) {
-            print("MyApp Consumer: isLoading=${auth.isLoading}, isAuthenticated=${auth.isAuthenticated}");
-            if (auth.isLoading) {
-              return const SplashScreen();
-            } else if (auth.isAuthenticated) {
-              return const MainNavigationScreen();
-            } else {
-              return const WelcomeScreen();
-            }
-          },
-        ),
-        routes: {
+        child: MaterialApp(
+          title: 'MoneyGuard',
+          theme: AppTheme.darkTheme,
+          debugShowCheckedModeBanner: false,
+          navigatorObservers: [ _KeyboardDismissNavigatorObserver() ],
+          home: Consumer<AuthProvider>(
+            builder: (ctx, auth, _) {
+              print("MyApp Consumer: isLoading=${auth.isLoading}, isAuthenticated=${auth.isAuthenticated}");
+              if (auth.isLoading) {
+                return const SplashScreen();
+              } else if (auth.isAuthenticated) {
+                return const MainNavigationScreen();
+              } else {
+                return const WelcomeScreen();
+              }
+            },
+          ),
+
+      // //temp
+      // child: MaterialApp(
+      //   title: 'MoneyGuard',
+      //   theme: AppTheme.darkTheme,
+      //   debugShowCheckedModeBanner: false,
+      //   navigatorObservers: [ _KeyboardDismissNavigatorObserver() ],
+      //   home: const ProfileScreen(), // <--- Direct access for UI work
+
+          routes: {
           '/welcome': (context) => const WelcomeScreen(),
           '/home': (context) => const MainNavigationScreen(),
           '/login': (context) => const LoginScreen(),

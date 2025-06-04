@@ -22,6 +22,11 @@ class _AIChatScreenState extends State<AIChatScreen> with WidgetsBindingObserver
     super.initState();
     // Регистрируем наблюдатель
     WidgetsBinding.instance.addObserver(this);
+    
+    // Загружаем историю чата при открытии экрана
+    Future.microtask(() {
+      Provider.of<AIChatProvider>(context, listen: false).initialize();
+    });
   }
 
   @override
@@ -41,6 +46,10 @@ class _AIChatScreenState extends State<AIChatScreen> with WidgetsBindingObserver
     if (state == AppLifecycleState.resumed) {
       // Убедимся, что клавиатура скрыта
       FocusManager.instance.primaryFocus?.unfocus();
+      
+      // Обновляем историю чата при возврате в приложение
+      final chatProvider = Provider.of<AIChatProvider>(context, listen: false);
+      chatProvider.refreshChatHistory();
     }
   }
 
@@ -71,8 +80,12 @@ class _AIChatScreenState extends State<AIChatScreen> with WidgetsBindingObserver
     
     return FocusDetector(
       onFocusGained: () {
-        // Когда экран получает фокус
+        // Когда экран получает фокус, обновляем историю чата
         FocusManager.instance.primaryFocus?.unfocus();
+        // Обновляем историю чата при возвращении на экран
+        Future.microtask(() {
+          Provider.of<AIChatProvider>(context, listen: false).refreshChatHistory();
+        });
       },
       child: WillPopScope(
         // Обрабатываем нажатие кнопки "назад"
