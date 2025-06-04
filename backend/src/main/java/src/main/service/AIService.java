@@ -2,13 +2,16 @@ package src.main.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import src.main.dto.ai.AIChatResponse;
 import src.main.dto.ai.AnalysisResponse;
+import src.main.model.ChatHistory;
 import src.main.model.Transaction;
 import src.main.model.User;
+import src.main.repository.ChatHistoryRepository;
 import src.main.repository.TransactionRepository;
 import src.main.repository.UserRepository;
 
@@ -26,6 +29,7 @@ public class AIService {
 
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private final ChatHistoryRepository chatHistoryRepository;
     private final HttpGeminiService httpGeminiService;
 
     public AnalysisResponse getAnalysis() {
@@ -74,18 +78,43 @@ public class AIService {
         log.debug("Обработка AI чата для сообщения: {}", message);
         
         try {
+            User currentUser = getCurrentUser();
+            
+            // Получаем историю последних 10 сообщений для контекста
+            org.springframework.data.domain.Pageable pageable = PageRequest.of(0, 10);
+            List<ChatHistory> recentHistory = chatHistoryRepository.findLastNMessages(currentUser, pageable);
+            
             // Получаем контекст пользователя для более персонализированного ответа
             String userContext = buildUserContext();
             
-            // Формируем полный запрос с контекстом
+            // Формируем полный запрос с контекстом истории
+            String chatHistoryContext = buildChatHistoryContext(recentHistory);
             String fullMessage = String.format(
-                "Контекст пользователя:\n%s\n\nВопрос пользователя: %s\n\n" +
-                "Дай практический совет по личным финансам на основе этой информации.",
-                userContext, message
+                "Контекст пользователя:\n%s\n\nИстория переписки:\n%s\n\nТекущий вопрос пользователя: %s\n\n" +
+                "Дай практический совет по личным финансам на основе этой информации и контекста предыдущих сообщений.",
+                userContext, chatHistoryContext, message
             );
             
             // Получаем ответ от Gemini API
             String aiResponse = httpGeminiService.generateFinancialAdvice(fullMessage);
+            
+            // Сохраняем пользовательское сообщение в историю
+            ChatHistory userHistoryEntry = ChatHistory.builder()
+                    .user(currentUser)
+                    .message(message)
+                    .response("")
+                    .role(ChatHistory.MessageRole.USER)
+                    .build();
+            chatHistoryRepository.save(userHistoryEntry);
+            
+            // Сохраняем ответ ассистента в историю
+            ChatHistory assistantHistoryEntry = ChatHistory.builder()
+                    .user(currentUser)
+                    .message("")
+                    .response(aiResponse)
+                    .role(ChatHistory.MessageRole.ASSISTANT)
+                    .build();
+            chatHistoryRepository.save(assistantHistoryEntry);
             
             // Парсим ответ и формируем структурированный результат
             List<String> advice = parseAdviceFromResponse(aiResponse);
@@ -190,6 +219,43 @@ public class AIService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    }
+
+    private String buildChatHistoryContext(List<ChatHistory> recentHistory) {
+        if (recentHistory == null || recentHistory.isEmpty()) {
+            return "Это первое сообщение пользователя в данной сессии.";
+        }
+        
+        StringBuilder historyContext = new StringBuilder();
+        historyContext.append("Предыдущие сообщения (от новых к старым):\n");
+        
+        try {
+            // Обращаем порядок, чтобы показать от старых к новым
+            Collections.reverse(recentHistory);
+            
+            for (ChatHistory entry : recentHistory) {
+                if (entry.getRole() == ChatHistory.MessageRole.USER && 
+                    entry.getMessage() != null && !entry.getMessage().trim().isEmpty()) {
+                    historyContext.append("Пользователь: ").append(entry.getMessage()).append("\n");
+                }
+                
+                if (entry.getRole() == ChatHistory.MessageRole.ASSISTANT && 
+                    entry.getResponse() != null && !entry.getResponse().trim().isEmpty()) {
+                    // Сокращаем длинные ответы для контекста
+                    String response = entry.getResponse();
+                    if (response.length() > 200) {
+                        response = response.substring(0, 200) + "...";
+                    }
+                    historyContext.append("Ассистент: ").append(response).append("\n");
+                }
+                historyContext.append("---\n");
+            }
+        } catch (Exception e) {
+            log.error("Ошибка при построении контекста истории: {}", e.getMessage(), e);
+            return "Не удалось получить историю предыдущих сообщений.";
+        }
+        
+        return historyContext.toString();
     }
 
     private String buildUserContext() {

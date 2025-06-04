@@ -2,8 +2,6 @@ package src.main.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,7 +21,7 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Cacheable(value = "userProfile", key = "#root.target.getCurrentUserEmail()")
+    // @Cacheable(value = "userProfile", key = "#root.target.getCurrentUserEmail()")
     public ProfileResponse getProfile() {
         User currentUser = getCurrentUser();
         
@@ -31,12 +29,14 @@ public class ProfileService {
                 .id(currentUser.getId())
                 .email(currentUser.getEmail())
                 .name(currentUser.getName())
+                .profileImage(currentUser.getProfileImage())
+                .aiAccessEnabled(currentUser.isAiAccessEnabled())
                 .subscriptionType(currentUser.getSubscriptionType() != null ? currentUser.getSubscriptionType().name() : null)
                 .subscriptionExpiry(currentUser.getSubscriptionExpiry())
                 .build();
     }
 
-    @CacheEvict(value = "userProfile", key = "#root.target.getCurrentUserEmail()")
+    // @CacheEvict(value = "userProfile", key = "#root.target.getCurrentUserEmail()") 
     public ProfileResponse updateProfile(ProfileUpdateRequest request) {
         User currentUser = getCurrentUser();
         
@@ -62,6 +62,8 @@ public class ProfileService {
                 .id(currentUser.getId())
                 .email(currentUser.getEmail())
                 .name(currentUser.getName())
+                .profileImage(currentUser.getProfileImage())
+                .aiAccessEnabled(currentUser.isAiAccessEnabled())
                 .subscriptionType(currentUser.getSubscriptionType() != null ? currentUser.getSubscriptionType().name() : null)
                 .subscriptionExpiry(currentUser.getSubscriptionExpiry())
                 .build();
@@ -79,17 +81,5 @@ public class ProfileService {
                     log.error("Пользователь не найден: {}", username);
                     return new UsernameNotFoundException("Пользователь " + username + " не найден");
                 });
-    }
-
-    private ProfileResponse mapUserToProfileResponse(User user) {
-        if (user == null) return null;
-        return ProfileResponse.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .name(user.getName())
-                .aiAccessEnabled(user.isAiAccessEnabled())
-                .subscriptionType(user.getSubscriptionType() != null ? user.getSubscriptionType().name() : null)
-                .subscriptionExpiry(user.getSubscriptionExpiry())
-                .build();
     }
 } 

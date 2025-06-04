@@ -42,6 +42,9 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean aiAccessEnabled = false;
     
+    @Column(name = "profile_image")
+    private String profileImage;
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "subscription_type")
     private SubscriptionType subscriptionType;

@@ -17,9 +17,14 @@ import src.main.dto.ai.AnalysisResponse;
 import src.main.exception.BusinessException;
 import src.main.exception.InvalidDataException;
 import src.main.exception.ResourceNotFoundException;
+import src.main.model.ChatHistory;
+import src.main.model.SubscriptionType;
 import src.main.model.User;
+import src.main.repository.ChatHistoryRepository;
 import src.main.repository.UserRepository;
 import src.main.service.AIService;
+
+import java.util.*;
 
 @RestController
 @RequestMapping("/ai")
@@ -30,6 +35,7 @@ public class AIController {
 
     private final AIService aiService;
     private final UserRepository userRepository;
+    private final ChatHistoryRepository chatHistoryRepository;
 
     @GetMapping("/analysis")
     public ResponseEntity<AnalysisResponse> getAnalysis() {
@@ -47,6 +53,13 @@ public class AIController {
             @RequestParam @NotBlank(message = "Сообщение не может быть пустым") String message,
             @RequestParam(required = false) MultipartFile image) {
         log.debug("REST запрос на чат с ИИ: {}", message);
+        
+        // Проверяем доступ к AI чату
+        User currentUser = getCurrentUser();
+        if (!currentUser.isAiAccessEnabled()) {
+            throw new AccessDeniedException("AI доступ отключен для данного пользователя");
+        }
+        
         try {
             if (image != null && !image.isEmpty()) {
                 String fileName = image.getOriginalFilename();
@@ -72,13 +85,52 @@ public class AIController {
 
     @PostMapping("/chat")
     public ResponseEntity<AIChatResponse> getAIRecommendations(@RequestBody AIChatRequest request) {
-        User user = getCurrentUser();
+        log.debug("REST запрос на AI рекомендации: {}", request.getMessage());
         
-        if (!user.isAiAccessEnabled()) {
-            throw new AccessDeniedException("Для доступа к AI-рекомендациям необходимо активировать соответствующую опцию");
+        // AI чат доступен всем пользователям с включенным AI доступом
+        User currentUser = getCurrentUser();
+        if (!currentUser.isAiAccessEnabled()) {
+            throw new AccessDeniedException("AI доступ отключен для данного пользователя");
         }
         
-        return ResponseEntity.ok(aiService.chat(request.getMessage(), null));
+        try {
+            return ResponseEntity.ok(aiService.chat(request.getMessage(), null));
+        } catch (Exception e) {
+            log.error("Ошибка при получении AI рекомендаций: {}", e.getMessage(), e);
+            throw new BusinessException("Ошибка при получении AI рекомендаций", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    @GetMapping("/chat/history")
+    public ResponseEntity<List<Map<String, Object>>> getChatHistory() {
+        log.debug("REST запрос на получение истории чата");
+        
+        User currentUser = getCurrentUser();
+        
+        // История чата доступна всем пользователям с включенным AI доступом
+        if (!currentUser.isAiAccessEnabled()) {
+            throw new AccessDeniedException("AI доступ отключен для данного пользователя");
+        }
+        
+        try {
+            List<ChatHistory> history = chatHistoryRepository.findByUserOrderByCreatedAtAsc(currentUser);
+            
+            List<Map<String, Object>> messages = new ArrayList<>();
+            for (ChatHistory entry : history) {
+                Map<String, Object> message = new HashMap<>();
+                message.put("role", entry.getRole().toString());
+                message.put("message", entry.getMessage() != null ? entry.getMessage() : "");
+                message.put("response", entry.getResponse() != null ? entry.getResponse() : "");
+                message.put("createdAt", entry.getCreatedAt().toString());
+                messages.add(message);
+            }
+            
+            
+            return ResponseEntity.ok(messages);
+        } catch (Exception e) {
+            log.error("Ошибка при получении истории чата: {}", e.getMessage(), e);
+            throw new BusinessException("Ошибка при получении истории чата", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
     
     private User getCurrentUser() {
@@ -86,4 +138,5 @@ public class AIController {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
     }
-} 
+}
+ 

@@ -2,8 +2,6 @@ package src.main.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,22 +11,14 @@ import src.main.dto.transaction.TransactionResponse;
 import src.main.exception.EntityNotFoundException;
 import src.main.exception.InvalidDataException;
 import src.main.exception.OperationNotAllowedException;
-import src.main.exception.ResourceNotFoundException;
+import src.main.exception.UserNotFoundException;
 import src.main.model.*;
 import src.main.repository.*;
-import src.main.service.ProfileService;
-import src.main.util.DateUtil;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
-import src.main.exception.UserNotFoundException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,10 +30,11 @@ public class TransactionService {
     private final UserRepository userRepository;
     private final GoalRepository goalRepository;
     private final LimitRepository limitRepository;
-    private final ProfileService profileService;
+    private final HttpGeminiService httpGeminiService;
+    private final ChatHistoryRepository chatHistoryRepository;
 
     public List<TransactionResponse> getTransactions(LocalDate dateFrom, LocalDate dateTo, String categoryName) {
-        User currentUser = profileService.getCurrentUser();
+        User currentUser = getCurrentUser();
         log.debug("Получение транзакций для пользователя {} за период: {} - {}, категория: {}",
                  currentUser.getEmail(), dateFrom, dateTo, categoryName);
 
@@ -313,7 +304,309 @@ public class TransactionService {
 
     private List<String> generateRecommendations(Transaction transaction) {
         log.debug("Генерация рекомендаций для транзакции ID: {}", transaction.getId());
-        return Collections.emptyList();
+        
+        List<String> recommendations = new ArrayList<>();
+        
+        try {
+            // 1. Сначала получаем локальные рекомендации (быстрые)
+            List<String> localRecommendations = generateLocalRecommendations(transaction);
+            recommendations.addAll(localRecommendations);
+            
+            // 2. Затем получаем AI рекомендации через Gemini API
+            List<String> aiRecommendations = generateAIRecommendations(transaction);
+            recommendations.addAll(aiRecommendations);
+            
+        } catch (Exception e) {
+            log.error("Ошибка при генерации рекомендаций: {}", e.getMessage(), e);
+            // Возвращаем базовые рекомендации в случае ошибки
+            recommendations.add("Продолжайте отслеживать свои финансы для лучшего контроля над бюджетом");
+            recommendations.add("Рассмотрите возможность создания финансовых целей");
+        }
+        
+        // Ограничиваем общее количество рекомендаций
+        if (recommendations.size() > 5) {
+            recommendations = recommendations.subList(0, 5);
+        }
+        
+        log.debug("Сгенерировано {} рекомендаций для транзакции", recommendations.size());
+        return recommendations;
+    }
+
+    private List<String> generateLocalRecommendations(Transaction transaction) {
+        List<String> recommendations = new ArrayList<>();
+        User user = transaction.getUser();
+        Category category = transaction.getCategory();
+        BigDecimal amount = transaction.getAmount().abs();
+        
+        try {
+            // Анализируем паттерны трат пользователя за последний месяц
+            LocalDate dateFrom = LocalDate.now().minusMonths(1);
+            LocalDate dateTo = LocalDate.now();
+            List<Transaction> recentTransactions = transactionRepository.findByUserAndDateBetweenOrderByDateDesc(
+                    user, dateFrom, dateTo);
+            
+            // Рекомендации для доходов
+            if (category.isIncome()) {
+                recommendations.add("Отлично! Новый доход поможет укрепить ваше финансовое положение");
+                
+                // Рекомендации по инвестированию части дохода
+                if (amount.compareTo(BigDecimal.valueOf(10000)) > 0) {
+                    recommendations.add("Рассмотрите возможность инвестирования 10-15% от этого дохода");
+                }
+                
+                // Рекомендация создать подушку безопасности
+                if (transaction.getGoal() == null) {
+                    recommendations.add("Рекомендуем направить часть дохода на создание финансовой подушки безопасности");
+                }
+            } else {
+                // Рекомендации для расходов
+                
+                // Анализируем лимиты категории
+                Optional<Limit> categoryLimit = limitRepository.findByUserAndCategory(user, category);
+                if (categoryLimit.isPresent()) {
+                    BigDecimal limitAmount = categoryLimit.get().getAmount();
+                    
+                    // Вычисляем сколько потрачено в этой категории за текущий месяц
+                    LocalDate currentMonthStart = LocalDate.now().withDayOfMonth(1);
+                    List<Transaction> monthlyExpenses = transactionRepository.findByUserAndCategoryIdAndDateBetweenOrderByDateDesc(
+                            user, category.getId(), currentMonthStart, LocalDate.now());
+                    
+                    BigDecimal totalSpent = monthlyExpenses.stream()
+                            .map(Transaction::getAmount)
+                            .map(BigDecimal::abs)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    
+                    double spentPercentage = totalSpent.divide(limitAmount, 4, java.math.RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100)).doubleValue();
+                    
+                    if (spentPercentage > 80) {
+                        recommendations.add("Внимание! Вы потратили " + String.format("%.1f", spentPercentage) + 
+                                "% от лимита в категории '" + category.getName() + "'");
+                    } else if (spentPercentage > 50) {
+                        recommendations.add("Вы потратили " + String.format("%.1f", spentPercentage) + 
+                                "% от лимита в категории '" + category.getName() + "'. Контролируйте расходы");
+                    }
+                }
+                
+                // Анализируем размер траты относительно среднего
+                if (recentTransactions.size() > 3) {
+                    BigDecimal averageExpense = recentTransactions.stream()
+                            .filter(t -> !t.getCategory().isIncome())
+                            .map(Transaction::getAmount)
+                            .map(BigDecimal::abs)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                            .divide(BigDecimal.valueOf(recentTransactions.size()), 2, java.math.RoundingMode.HALF_UP);
+                    
+                    if (amount.compareTo(averageExpense.multiply(BigDecimal.valueOf(2))) > 0) {
+                        recommendations.add("Эта трата значительно превышает ваши обычные расходы. Убедитесь, что это запланированная покупка");
+                    }
+                }
+            }
+            
+            // Добавляем мотивационные сообщения если нет других рекомендаций
+            if (recommendations.isEmpty()) {
+                if (category.isIncome()) {
+                    recommendations.add("Продолжайте в том же духе! Регулярные доходы - основа финансовой стабильности");
+                } else {
+                    recommendations.add("Хорошо, что вы отслеживаете свои расходы! Это первый шаг к финансовой грамотности");
+                }
+            }
+            
+        } catch (Exception e) {
+            log.error("Ошибка при генерации локальных рекомендаций: {}", e.getMessage(), e);
+        }
+        
+        return recommendations;
+    }
+
+    private List<String> generateAIRecommendations(Transaction transaction) {
+        List<String> aiRecommendations = new ArrayList<>();
+        
+        try {
+            User user = transaction.getUser();
+            Category category = transaction.getCategory();
+            BigDecimal amount = transaction.getAmount().abs();
+            
+            // Строим контекст для AI запроса
+            String aiContext = buildTransactionContext(transaction, user);
+            
+            // Формируем запрос к Gemini API
+            String prompt = String.format(
+                "Пользователь только что %s %s рублей в категории '%s'.\n\n" +
+                "Контекст пользователя:\n%s\n\n" +
+                "Дай 1-2 конкретных совета по управлению финансами, учитывая эту транзакцию. " +
+                "Ответ должен быть полезным и практичным. Каждый совет начинай с новой строки и используй эмодзи.",
+                category.isIncome() ? "получил доход в размере" : "потратил",
+                amount,
+                category.getName(),
+                aiContext
+            );
+            
+            // Получаем ответ от Gemini API через прокси
+            String aiResponse = httpGeminiService.generateFinancialAdvice(prompt);
+            
+            // Парсим ответ AI
+            List<String> parsedRecommendations = parseAIRecommendations(aiResponse);
+            aiRecommendations.addAll(parsedRecommendations);
+            
+            // Сохраняем AI рекомендации в чат-историю
+            saveRecommendationsToChat(user, transaction, aiResponse);
+            
+            log.debug("Получено {} AI рекомендаций для транзакции", aiRecommendations.size());
+            
+        } catch (Exception e) {
+            log.warn("Не удалось получить AI рекомендации: {}", e.getMessage());
+            // Добавляем fallback рекомендацию
+            aiRecommendations.add("Рекомендуем регулярно анализировать свои траты для лучшего финансового планирования");
+        }
+        
+        return aiRecommendations;
+    }
+
+    private String buildTransactionContext(Transaction transaction, User user) {
+        try {
+            StringBuilder context = new StringBuilder();
+            
+            // Основная информация о пользователе
+            context.append("Пользователь: ").append(user.getEmail()).append("\n");
+            
+            // Анализ последних транзакций за месяц
+            LocalDate dateFrom = LocalDate.now().minusMonths(1);
+            LocalDate dateTo = LocalDate.now();
+            List<Transaction> recentTransactions = transactionRepository.findByUserAndDateBetweenOrderByDateDesc(
+                    user, dateFrom, dateTo);
+            
+            if (!recentTransactions.isEmpty()) {
+                // Подсчитываем доходы и расходы
+                BigDecimal totalIncome = recentTransactions.stream()
+                        .filter(t -> t.getCategory().isIncome())
+                        .map(Transaction::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                
+                BigDecimal totalExpenses = recentTransactions.stream()
+                        .filter(t -> !t.getCategory().isIncome())
+                        .map(Transaction::getAmount)
+                        .map(BigDecimal::abs)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                
+                context.append("Статистика за последний месяц:\n");
+                context.append("- Общий доход: ").append(totalIncome).append(" руб.\n");
+                context.append("- Общие расходы: ").append(totalExpenses).append(" руб.\n");
+                context.append("- Баланс: ").append(totalIncome.subtract(totalExpenses)).append(" руб.\n");
+                
+                // Топ-3 категории расходов
+                var expensesByCategory = recentTransactions.stream()
+                        .filter(t -> !t.getCategory().isIncome())
+                        .collect(Collectors.groupingBy(
+                                t -> t.getCategory().getName(),
+                                Collectors.reducing(BigDecimal.ZERO, 
+                                        t -> t.getAmount().abs(), 
+                                        BigDecimal::add)));
+                
+                context.append("Топ категории расходов:\n");
+                expensesByCategory.entrySet().stream()
+                        .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
+                        .limit(3)
+                        .forEach(entry -> context.append("- ").append(entry.getKey())
+                                .append(": ").append(entry.getValue()).append(" руб.\n"));
+            }
+            
+            return context.toString();
+            
+        } catch (Exception e) {
+            log.error("Ошибка при построении контекста транзакции: {}", e.getMessage(), e);
+            return "Базовая информация о пользователе недоступна.";
+        }
+    }
+
+    private List<String> parseAIRecommendations(String aiResponse) {
+        List<String> recommendations = new ArrayList<>();
+        
+        try {
+            if (aiResponse == null || aiResponse.trim().isEmpty()) {
+                return recommendations;
+            }
+            
+            // Разбиваем ответ на строки
+            String[] lines = aiResponse.split("\n");
+            
+            for (String line : lines) {
+                line = line.trim();
+                
+                // Пропускаем пустые строки
+                if (line.isEmpty()) {
+                    continue;
+                }
+                
+                // Очищаем от маркеров списка
+                line = line.replaceAll("^[0-9]+[.)\\s]*", "")
+                          .replaceAll("^[-*•]\\s*", "")
+                          .trim();
+                
+                // Добавляем только содержательные рекомендации
+                if (line.length() > 10 && !line.toLowerCase().startsWith("конечно") && 
+                    !line.toLowerCase().startsWith("хорошо")) {
+                    recommendations.add(line);
+                }
+            }
+            
+            // Если не удалось разобрать по строкам, разбиваем по предложениям
+            if (recommendations.isEmpty()) {
+                String[] sentences = aiResponse.split("[.!?]+");
+                for (String sentence : sentences) {
+                    sentence = sentence.trim();
+                    if (sentence.length() > 15) {
+                        recommendations.add(sentence);
+                        if (recommendations.size() >= 2) break; // Ограничиваем 2 рекомендациями
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            log.error("Ошибка при парсинге AI рекомендаций: {}", e.getMessage(), e);
+        }
+        
+        return recommendations;
+    }
+
+    private void saveRecommendationsToChat(User user, Transaction transaction, String aiResponse) {
+        try {
+            // Формируем сообщение пользователя о транзакции
+            String userMessage = String.format(
+                "Создана транзакция: %s %.2f руб. в категории '%s'%s",
+                transaction.getCategory().isIncome() ? "доход" : "расход",
+                transaction.getAmount().abs(),
+                transaction.getCategory().getName(),
+                transaction.getDescription() != null && !transaction.getDescription().isEmpty() 
+                    ? " (" + transaction.getDescription() + ")" : ""
+            );
+            
+            // Сохраняем сообщение пользователя
+            ChatHistory userHistoryEntry = ChatHistory.builder()
+                    .user(user)
+                    .message(userMessage)
+                    .response("")
+                    .role(ChatHistory.MessageRole.USER)
+                    .build();
+            chatHistoryRepository.save(userHistoryEntry);
+            
+            // Сохраняем ответ AI с рекомендациями
+            String assistantMessage = "Рекомендации по транзакции:\n\n" + aiResponse;
+            
+            ChatHistory assistantHistoryEntry = ChatHistory.builder()
+                    .user(user)
+                    .message("")
+                    .response(assistantMessage)
+                    .role(ChatHistory.MessageRole.ASSISTANT)
+                    .build();
+            chatHistoryRepository.save(assistantHistoryEntry);
+            
+            log.debug("AI рекомендации сохранены в чат-историю для пользователя {}", user.getEmail());
+            
+        } catch (Exception e) {
+            log.warn("Не удалось сохранить рекомендации в чат-историю: {}", e.getMessage());
+            // Не прерываем работу из-за ошибки сохранения в чат
+        }
     }
 
     private User getCurrentUser() {
