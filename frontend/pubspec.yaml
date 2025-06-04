@@ -4,7 +4,7 @@ description: "Финансовый ассистент для управлени�
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.0+1
+version: 1.1.0+2 # v1.1a
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -34,6 +34,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/app_icon.png"
+  min_sdk_android: 21
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -43,6 +49,8 @@ flutter:
   assets:
     - .env
     - assets/images/
+    - assets/app_icon.svg
+    - assets/app_icon.png
 
   # To add custom fonts to your application, add a fonts section here.
   fonts:

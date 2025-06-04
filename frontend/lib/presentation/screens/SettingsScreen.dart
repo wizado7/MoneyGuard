@@ -116,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'Версия',
             Icons.info_outline,
             trailing: Text(
-              '1.0.0',
+              'v1.1a',
               style: TextStyle(color: AppTheme.secondaryTextColor),
             ),
           ),

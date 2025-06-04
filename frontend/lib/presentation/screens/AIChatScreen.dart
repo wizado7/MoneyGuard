@@ -104,18 +104,8 @@ class _AIChatScreenState extends State<AIChatScreen> with WidgetsBindingObserver
           child: Scaffold(
             appBar: AppBar(
               title: Text('AI Ассистент'),
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back),
-                onPressed: () {
-                  // Скрываем клавиатуру перед возвратом
-                  // Используем более надежный подход
-                  final currentFocus = FocusScope.of(context);
-                  if (!currentFocus.hasPrimaryFocus && currentFocus.focusedChild != null) {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                  }
-                  Navigator.pop(context);
-                },
-              ),
+              automaticallyImplyLeading: false,
+              leading: SizedBox.shrink(),
               actions: [
                 IconButton(
                   icon: Icon(Icons.delete),
