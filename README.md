@@ -52,20 +52,36 @@ MoneyGuard помогает взять под контроль личные фи
 - **Qwen API** - обработка финансовых данных
 
 ## 🔗 Быстрые ссылки
-▶️ [Видеопрезентация](https://youtu.be/J_SbZfkjXYc)  
-▶️ [Промежуточный отчет видео](https://youtu.be/Qyp5iFMgo_g)  
 📋 [Главная доска](https://app.weeek.net/ws/765643/shared/board/pCvCZlCfqLW0pM9d78EEVriCExHBJETf), 📋[Доска backend](https://app.weeek.net/ws/765643/shared/board/w4LTLAQwLxL7LriuHKKwbTc94ETcmUgp), 📋[Доска frontend](https://app.weeek.net/ws/765643/shared/board/mTd7tOupLX7b6svC3pmEpZKQWcrHRA5s), 📋[Доска test](https://app.weeek.net/ws/765643/shared/board/OqvWMVcwJyCLArzsp6xqrPXubLgxWgj9)  
+📚 [API документация](https://github.com/wizado7/MoneyGuard/blob/backend/backend/API.md)
+
+
+*************************
+ 
+# 1-ая аттестация
+## 🔗 Быстрые ссылки
+▶️ [Видеопрезентация](https://youtu.be/J_SbZfkjXYc)  
 📄 [Техническое задание](https://github.com/wizado7/MoneyGuard/blob/main/Documentation/tz/TZ.pdf)  
 📄 [Предпроектное исследование](https://github.com/wizado7/MoneyGuard/blob/main/Documentation/predevelopment_analysis/predevelopment_analysis.pdf)  
-📚 [API документация](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/wizado7/MoneyGuard/main/Documentation/api/openapi.yaml)  
-🎨 [Figma-макет](https://www.figma.com/design/Y2fINF6TJY74dbqRtbp0ZC/Untitled?node-id=0-1&t=Yah9GDolY9SZGMGR-1)
+🎨 [Figma-макет](https://www.figma.com/design/Y2fINF6TJY74dbqRtbp0ZC/Untitled?node-id=0-1&t=Yah9GDolY9SZGMGR-1) 
 
-
-
-## ✅ Наш [Чек-лист](https://docs.google.com/spreadsheets/d/1cfGVbr18j8LwufJ-sXo4wqPIhHYh7-kiY-nGHST9bUM/edit?gid=0#gid=0) 
+## ✅ Кросс проверка 
+Наш [Чек-лист](https://docs.google.com/spreadsheets/d/1cfGVbr18j8LwufJ-sXo4wqPIhHYh7-kiY-nGHST9bUM/edit?gid=0#gid=0)   
 Нас оценивали:
-- **4 группа 1 спец команда [Git](https://github.com/noviyblock/TechTrek-Web-repository) [Чек-лист 1](https://docs.google.com/spreadsheets/d/13YKOvzV7jyS1OseR_betV5oW4j_kMyNTD6rEV9CL7d4/edit?usp=sharing), [Чек-лист 2](https://docs.google.com/spreadsheets/d/16xFaDXzNxKSrtZaR0VIYNgHAEtms-4v47aozlcLBHlE/edit?gid=0#gid=0)**
+- **4 группа 1 спец команда [Git](https://github.com/noviyblock/TechTrek-Web-repository) [Чек-лист](https://docs.google.com/spreadsheets/d/13YKOvzV7jyS1OseR_betV5oW4j_kMyNTD6rEV9CL7d4/edit?usp=sharing)**
 - **9 группа 3 команда [Git](https://github.com/slash0t/travel-planner) [Чек-лист](https://docs.google.com/spreadsheets/d/195jVLHMlAAU-fgBwmSOLQPdO-yhVrDwKYtFTor5-Xs4/edit?gid=106249898#gid=106249898)**
-- **8 группа 5 команда [Git](https://gitlab.com/vsu.cs/TPmain) [Чек-лист 1](https://github.com/slash0t/travel-planner/blob/main/documentation/%D0%A7%D0%B5%D0%BA%D0%BB%D0%B8%D1%81%D1%82%20%D0%BE%D1%86%D0%B5%D0%BD%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F.pdf), [Чек-лист 2](https://docs.google.com/spreadsheets/d/1vsXH9SvBhD0p94vhBCQfikfSvJPE_lxe2iU1Q3-Z0Ew/edit?gid=0#gid=0)**
+- **8 группа 5 команда [Git](https://gitlab.com/vsu.cs/TPmain) [Чек-лист](https://github.com/slash0t/travel-planner/blob/main/documentation/%D0%A7%D0%B5%D0%BA%D0%BB%D0%B8%D1%81%D1%82%20%D0%BE%D1%86%D0%B5%D0%BD%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F.pdf)**
 - **10 группа 2 команда [Git](https://github.com/Ikramus/fitness-ai?tab=readme-ov-file) [Чек-лист](https://docs.google.com/spreadsheets/d/1LtXZlFm_UbMDezV3RIYXoj2cIRNN2LuDyQXwmJ8V7M8/edit?gid=116236438#gid=116236438)**
- 
+
+*************************
+
+# 2-ая аттестация 
+## 🔗 Быстрые ссылки
+▶️ [Промежуточный отчет видео](https://youtu.be/Qyp5iFMgo_g)  
+
+
+## ✅ Кросс проверка 
+Наш [Чек-лист](https://docs.google.com/spreadsheets/d/1cfGVbr18j8LwufJ-sXo4wqPIhHYh7-kiY-nGHST9bUM/edit?gid=0#gid=0)  
+Нас оценивали:
+- **4 группа 1 спец команда [Git](https://github.com/noviyblock/TechTrek-Web-repository) [Чек-лист](https://docs.google.com/spreadsheets/d/16xFaDXzNxKSrtZaR0VIYNgHAEtms-4v47aozlcLBHlE/edit?gid=0#gid=0)** 
+- **8 группа 5 команда [Git](https://gitlab.com/vsu.cs/TPmain) [Чек-лист](https://docs.google.com/spreadsheets/d/1vsXH9SvBhD0p94vhBCQfikfSvJPE_lxe2iU1Q3-Z0Ew/edit?gid=0#gid=0)**
